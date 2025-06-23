@@ -1,17 +1,18 @@
 const Exam = require("../models/ExamModel");
 const path = require("path");
 const mongoose = require("mongoose");
+const { uploadFileToS3 } = require("../utils/s3upload");
 
 const postExam = async (req, res) => {
   try {
     const questions = JSON.parse(req.body.questions);
     const settings = JSON.parse(req.body.settings);
-
+    const coverPreview = req.file ? await uploadFileToS3(req.file) : "/exam.jpg";
     const basicInfo = {
       title: req.body.title,
       category: req.body.category,
       description: req.body.description || "",
-      coverPreview: req.file ? `/` + req.file.filename : "/exam.jpg",
+      coverPreview: coverPreview,
     };
 
     const examData = {

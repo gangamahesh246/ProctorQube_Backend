@@ -4,8 +4,7 @@ const upsertProfile = async (req, res) => {
   try {
     const { employeeId, qualifications, ...rest } = req.body;
 
-    const photo = req.file ? req.file.filename : null;
-
+    const photo = req.file ? req.file.filename : null; //vijay
     const updates = {
       ...rest,
       employeeId,
