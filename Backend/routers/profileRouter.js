@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
-const upload = require("../middleware/Upload");
+const { upload } = require("../utils/s3upload");
 const { protect, adminOnly } = require("../middleware/authMiddleware");
 
 const { upsertProfile, getProfile, matchProfile } = require("../controllers/profileController");
@@ -22,7 +21,7 @@ const { upsertProfile, getProfile, matchProfile } = require("../controllers/prof
 //   });
 // };
 
-router.post("/profile", upsertProfile);
+router.post("/profile", protect, adminOnly, upload.single("photo"), upsertProfile);
 router.get("/getprofile", getProfile);
 router.get("/matchprofile", matchProfile);
 
