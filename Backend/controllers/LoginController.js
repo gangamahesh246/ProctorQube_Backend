@@ -47,8 +47,10 @@ const LoginController = async (req, res, next) => {
     const user = await Login.findOne({
       $or: [{ student_id: id }, { employeeId: id }, { username: id }],
     });
-    if (!user || !(await user.matchPassword(password))) {
+    if (!(await user.matchPassword(password))) {
       return res.status(401).json({ message: "Invalid credentials" });
+    } else if (!user) {
+      return res.status(401).json({ message: "User not found" });
     }
 
     res.status(200).json({

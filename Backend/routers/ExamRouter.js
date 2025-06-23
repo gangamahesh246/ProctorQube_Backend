@@ -24,7 +24,7 @@ const handleFileUpload = (req, res, next) => {
 
 Route.post('/postexam', protect, adminOnly, handleFileUpload, postExam);
 Route.get('/getexam', protect, adminOnly, GetExam);
-Route.get('/getexam/:examId', protect, adminOnly, getExamById);
+Route.get('/getexam/:examId', protect, getExamById);
 Route.get('/getexamquestions/:examId', protect, adminOnly, getExamQuestionsById);
 Route.put('/updateexam/:examId', protect, adminOnly, UpdateExam);
 Route.delete('/deleteexam/:examId', protect, adminOnly, deleteExam);
