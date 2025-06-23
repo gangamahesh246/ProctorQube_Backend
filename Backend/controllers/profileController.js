@@ -1,10 +1,19 @@
 const Profile = require("../models/FacultyProfile");
+const { uploadFileToS3 } = require("../utils/s3upload");
 
 const upsertProfile = async (req, res) => {
   try {
     const { employeeId, qualifications, ...rest } = req.body;
 
-    const photo = req.file ? req.file.filename : null;
+    let photo = null;
+    if (req.file) {
+      try {
+        photo = await uploadFileToS3(req.file);
+      } catch (e) {
+        console.error("Error uploading profile photo to S3:", e);
+        return res.status(500).json({ message: "Error uploading profile photo", error: e.message });
+      }
+    }
 
     const updates = {
       ...rest,

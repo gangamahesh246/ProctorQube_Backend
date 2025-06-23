@@ -1,17 +1,44 @@
 const Exam = require("../models/ExamModel");
 const path = require("path");
 const mongoose = require("mongoose");
+const { uploadFileToS3 } = require("../utils/s3upload");
 
 const postExam = async (req, res) => {
   try {
-    const questions = JSON.parse(req.body.questions);
-    const settings = JSON.parse(req.body.settings);
+    console.log("BODY:", req.body);
+    console.log("FILE:", req.file);
+
+    let questions, settings;
+    try {
+      questions = JSON.parse(req.body.questions);
+    } catch (e) {
+      console.error("Error parsing questions:", e);
+      return res.status(400).json({ message: "Invalid questions JSON", error: e.message });
+    }
+    try {
+      settings = JSON.parse(req.body.settings);
+    } catch (e) {
+      console.error("Error parsing settings:", e);
+      return res.status(400).json({ message: "Invalid settings JSON", error: e.message });
+    }
+
+    let coverPreview;
+    if (req.file) {
+      try {
+        coverPreview = await uploadFileToS3(req.file);
+      } catch (e) {
+        console.error("Error uploading file to S3:", e);
+        return res.status(500).json({ message: "Error uploading cover image", error: e.message });
+      }
+    } else {
+      coverPreview = "/exam.jpg";
+    }
 
     const basicInfo = {
       title: req.body.title,
       category: req.body.category,
       description: req.body.description || "",
-      coverPreview: req.file ? `/` + req.file.filename : "/exam.jpg",
+      coverPreview: coverPreview,
     };
 
     const examData = {
@@ -20,15 +47,22 @@ const postExam = async (req, res) => {
       settings,
     };
 
-    const newExam = new Exam(examData);
-    const savedExam = await newExam.save();
+    let savedExam;
+    try {
+      const newExam = new Exam(examData);
+      savedExam = await newExam.save();
+    } catch (e) {
+      console.error("Error saving exam to DB:", e);
+      return res.status(500).json({ message: "Error saving exam to database", error: e.message });
+    }
 
     res.status(201).json({
       message: "Exam created successfully",
       exam: savedExam,
     });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    console.error("POST EXAM ERROR:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 

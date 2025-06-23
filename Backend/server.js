@@ -23,6 +23,10 @@ const onlineStudents = new Map();
 const app = express();
 const server = createServer(app);
 
+app.get("/", (req, res) => {
+  res.send("Hello World");
+});
+
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
