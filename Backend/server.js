@@ -10,6 +10,7 @@ const exam = require("./routers/ExamRouter");
 const question = require("./routers/questionRoute");
 const student = require("./routers/studentsRoute");
 const profile = require("./routers/profileRouter");
+const userProfile = require("./routers/userProfileRouter");
 const login = require("./routers/LoginRouter");
 
 const onlineStudents = new Map();
@@ -31,6 +32,7 @@ app.use("/", exam);
 app.use("/", question);
 app.use("/", student);
 app.use("/", profile);
+app.use("/user/profile", userProfile);
 app.use("/", login);
 
 const io = new Server(server, {
