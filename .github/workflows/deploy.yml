@@ -1,0 +1,30 @@
+name: Deploy to Ubuntu Server
+
+on:
+  push:
+    branches:
+      - main  # or your deployment branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Set up SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H 23.23.80.35 >> ~/.ssh/known_hosts
+
+    - name: Deploy via SSH
+      run: |
+        ssh -i ~/.ssh/id_rsa root@23.23.80.35 << 'EOF'
+          cd /home/ubuntu/Backend
+          git pull origin main
+          npm install
+          pm2 restart all || pm2 start server.js
+        EOF
