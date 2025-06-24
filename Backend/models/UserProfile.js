@@ -66,6 +66,10 @@ const UserProfileSchema = new mongoose.Schema({
   guardianName: { 
     type: String 
   },
+  guardianphone: { 
+    type: String, 
+    required: true 
+  },
 
   // Password (hashed)
   password: { 

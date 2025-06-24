@@ -114,7 +114,8 @@ const updatePersonalDetails = async (req, res) => {
       gender, 
       address, 
       bio, 
-      guardianName 
+      guardianName,
+      guardianphone 
     } = req.body;
 
     const personalDetails = {
@@ -122,7 +123,8 @@ const updatePersonalDetails = async (req, res) => {
       gender,
       address,
       bio,
-      guardianName
+      guardianName,
+      guardianphone
     };
 
     const updatedProfile = await UserProfile.findOneAndUpdate(
