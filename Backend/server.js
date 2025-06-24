@@ -65,11 +65,10 @@ io.on("connection", (socket) => {
             console.log(`Student with email ${email} not found`);
             continue;
           }
-
           const socketId = onlineStudents.get(email);
           if (socketId) {
-            io.to(socketId).emit("examAssigned", examData, assignedBy);
-            console.log(`Sent exam assignment to ${email} ${examData._id} ${assignedBy}`);
+            socket.to(socketId).emit("examAssigned", examData, assignedBy);
+            console.log(`Sent exam assignment to ${email}`);
           } else {
             console.log(`Student ${email} is not online.`);
           }
@@ -99,7 +98,21 @@ io.on("connection", (socket) => {
     }
   );
 
-  socket.on("disconnect", () => {
+socket.on("deleteExamFromStudents", async ({ examId }) => {
+  try {
+    await StudentExam.updateMany(
+      { "exams.examId": examId },
+      { $pull: { exams: { examId: examId } } }
+    );
+    io.emit("examDeleted", { examId });
+    console.log(`Exam ${examId} removed from all students`);
+  } catch (err) {
+    console.error("Error removing exam from students:", err);
+  }
+});
+
+
+socket.on("disconnect", () => {
     console.log("user disconnected", socket.id);
     for (let [email, id] of onlineStudents.entries()) {
       if (id === socket.id) {

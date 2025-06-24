@@ -32,7 +32,7 @@ const assignExamToStudent = async (req, res) => {
 
 const getStudentExams = async (req, res) => {
   const { student_id } = req.query;
-  
+
   if (
     !student_id ||
     typeof student_id !== "string" ||
@@ -44,7 +44,10 @@ const getStudentExams = async (req, res) => {
   try {
     const data = await StudentExam.findOne({
       student_id: new mongoose.Types.ObjectId(student_id),
-    }).populate("exams.examId");
+    }).populate({
+      path: "exams.examId", 
+      select: "basicInfo settings.availability.timeLimitDays.from settings.availability.timeLimitDays.to", 
+    });
 
     if (!data) {
       return res.json({ exams: [] });
