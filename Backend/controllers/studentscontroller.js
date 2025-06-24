@@ -75,13 +75,13 @@ const PostOrUpdateStudents = async (req, res) => {
 
     if (!branch || !section || !Array.isArray(students)) {
       return res.status(400).json({ message: "Invalid input format" });
-    } 
+    }
 
     const formattedStudents = students.map((email) => ({
       student_mail: email,
       branch,
       section,
-    })); 
+    }));
 
     const existingStudents = await Students.find({
       branch,
@@ -120,15 +120,47 @@ const PostOrUpdateStudents = async (req, res) => {
 const deleteStudentById = async (req, res) => {
   try {
     const { mail } = req.params;
-    const deletedStudent = await Students.findOneAndDelete({student_mail: mail });
+    const deletedStudent = await Students.findOneAndDelete({
+      student_mail: mail,
+    });
     if (!deletedStudent) {
       return res.status(404).json({ message: "Student not found" });
     }
-    res.status(200).json({ message: "Student deleted successfully", data: deletedStudent });
-}
-catch (error) {
-    res.status(500).json({ message: "Internal server error", error: error.message });
-}
-}
+    res
+      .status(200)
+      .json({ message: "Student deleted successfully", data: deletedStudent });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
+};
 
-module.exports = { GetStudents, deleteBranch, PostOrUpdateStudents, PostSingleStudent, deleteStudentById };
+const GetStudentId = async (req, res) => {
+  const { student_mail } = req.query;
+
+  try {
+    const student = await Students.findOne({ student_mail }, { _id: 1 });
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    return res.status(200).json({ studentId: student._id });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
+  }
+};
+
+
+module.exports = {
+  GetStudents,
+  deleteBranch,
+  PostOrUpdateStudents,
+  PostSingleStudent,
+  deleteStudentById,
+  GetStudentId,
+};

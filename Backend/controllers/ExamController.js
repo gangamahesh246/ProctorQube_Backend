@@ -102,20 +102,8 @@ const getExamById = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(examId)) {
       return res.status(400).json({ message: "Invalid exam ID" });
     }
-
-    const exam = await Exam.aggregate([
-      {
-        $match: {
-          _id: new mongoose.Types.ObjectId(examId),
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-          settings: 1,
-        },
-      },
-    ]);
+    const exam = await Exam.findById(examId);
+    res.status(200).json(exam);
 
     if (exam.length === 0) {
       return res.status(404).json({ message: "Exam not found" });

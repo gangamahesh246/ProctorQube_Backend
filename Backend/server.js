@@ -6,12 +6,18 @@ require("dotenv").config();
 const cors = require("cors");
 const connectDB = require("./config/database");
 connectDB();
+const axios = require("axios");
+const baseURL = "http://localhost:3000";
+const jwt = require("jsonwebtoken");
 const exam = require("./routers/ExamRouter");
 const question = require("./routers/questionRoute");
 const student = require("./routers/studentsRoute");
 const profile = require("./routers/profileRouter");
 const userProfile = require("./routers/userProfileRouter");
 const login = require("./routers/LoginRouter");
+const getStudentExams = require("./routers/StudentExamRoutes");
+const Student = require("./models/studentsModel");
+const StudentExam = require("./models/StudentExam");
 
 const onlineStudents = new Map();
 
@@ -34,6 +40,7 @@ app.use("/", student);
 app.use("/", profile);
 app.use("/user/profile", userProfile);
 app.use("/", login);
+app.use("/", getStudentExams);
 
 const io = new Server(server, {
   cors: {
@@ -43,24 +50,56 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-  console.log("a user connected", socket.id); 
+  console.log("a user connected", socket.id);
 
   socket.on("registerStudent", (email) => {
     console.log(`Student registered: ${email} => ${socket.id}`);
     onlineStudents.set(email, socket.id);
-  }); 
+  });
 
-  socket.on("assignExamToStudents", ({ studentEmails, examData, assignedBy }) => {
-    studentEmails.forEach((email) => {
-      const socketId = onlineStudents.get(email);
-      if (socketId) {
-        io.to(socketId).emit("examAssigned", examData, assignedBy);
-        console.log(`Assigned exam to ${email}`);
-      } else {
-        console.log(`Student ${email} is not online.`);
+  socket.on(
+    "assignExamToStudents",
+    async ({ studentEmails, examData, assignedBy }) => {
+      for (const email of studentEmails) {
+        try {
+          const student = await Student.findOne({ student_mail: email });
+          if (!student) {
+            console.log(`Student with email ${email} not found`);
+            continue;
+          }
+
+          const socketId = onlineStudents.get(email);
+          if (socketId) {
+            io.to(socketId).emit("examAssigned", examData, assignedBy);
+            console.log(`Sent exam assignment to ${email} ${examData._id} ${assignedBy}`);
+          } else {
+            console.log(`Student ${email} is not online.`);
+          }
+
+          let studentExam = await StudentExam.findOne({
+            student_id: student._id,
+          });
+
+          if (!studentExam) {
+            studentExam = new StudentExam({
+              student_id: student._id,
+              exams: [],
+            });
+          }
+
+          studentExam.exams.push({
+            examId: examData._id,
+            assignedBy,
+          });
+
+          await studentExam.save();
+          console.log(`Stored exam assignment in DB for ${email}`);
+        } catch (err) {
+          console.error(`Error processing student ${email}:`, err.message);
+        }
       }
-    });
-  }); 
+    }
+  );
 
   socket.on("disconnect", () => {
     console.log("user disconnected", socket.id);

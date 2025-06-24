@@ -6,7 +6,7 @@ const { protect, adminOnly } = require("../middleware/authMiddleware");
 
 Route.post('/postexam', protect, adminOnly, upload.single("coverPreview"), postExam);
 Route.get('/getexam', protect, adminOnly, GetExam);
-Route.get('/getexam/:examId', protect, adminOnly, getExamById);
+Route.get('/getexam/:examId', protect, getExamById);
 Route.get('/getexamquestions/:examId', protect, adminOnly, getExamQuestionsById);
 Route.put('/updateexam/:examId', protect, adminOnly, UpdateExam);
 Route.delete('/deleteexam/:examId', protect, adminOnly, deleteExam);
