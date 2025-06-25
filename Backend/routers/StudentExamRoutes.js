@@ -4,6 +4,7 @@ const {
   assignExamToStudent,
   getStudentExams,
   updateExamStatus,
+  setStatus
 } = require("../controllers/StudentExamController");
 
 const {
@@ -12,8 +13,8 @@ const {
 } = require("../middleware/authMiddleware");
 
 router.post("/assign", protect, adminOnly, assignExamToStudent);
-
 router.get("/student", protect, getStudentExams);
+router.post("/status", protect, setStatus);
 
 router.put("/complete", protect, updateExamStatus);
 

@@ -8,7 +8,10 @@ const examEntrySchema = new mongoose.Schema({
   result: {
     type: String,
   },
-
+  ranking: { type: Number },
+  startingTime: { type: String },
+  closingTime: { type: String },
+  timeTaken: { type: Number }, 
   score: { type: Number },
   assignedBy: { type: String },
   assignedAt: { type: Date, default: Date.now },

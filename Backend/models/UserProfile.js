@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 
 const UserProfileSchema = new mongoose.Schema({
-  // Basic Details
   userId: { 
     type: String, 
     required: true, 

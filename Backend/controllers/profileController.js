@@ -52,7 +52,6 @@ const upsertProfile = async (req, res) => {
   }
 };
 
-module.exports = { upsertProfile };
 
 const getProfile = async (req, res) => {
   try {
