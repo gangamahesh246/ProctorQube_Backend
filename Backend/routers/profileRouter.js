@@ -21,7 +21,7 @@ const { upsertProfile, getProfile, matchProfile } = require("../controllers/prof
 //   });
 // };
 
-router.post("/profile", protect, adminOnly, upload.single("photo"), upsertProfile);
+router.post("/profile", protect, upload.single("photo"), upsertProfile);
 router.get("/getprofile", getProfile);
 router.get("/matchprofile", matchProfile);
 
