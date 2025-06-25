@@ -10,6 +10,8 @@ const exam = require("./routers/ExamRouter");
 const question = require("./routers/questionRoute");
 const student = require("./routers/studentsRoute");
 const profile = require("./routers/profileRouter");
+
+const studentProfile = require("./routers/userProfileRouter");
 const login = require("./routers/LoginRouter");
 const getStudentExams = require("./routers/StudentExamRoutes");
 const Student = require("./models/studentsModel");
@@ -34,6 +36,8 @@ app.use("/", exam);
 app.use("/", question);
 app.use("/", student);
 app.use("/", profile);
+
+app.use("/", studentProfile);
 app.use("/", login);
 app.use("/", getStudentExams);
 

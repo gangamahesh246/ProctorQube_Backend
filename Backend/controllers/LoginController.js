@@ -1,5 +1,7 @@
 const Login = require("../models/Login");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const mongoose = require("mongoose");
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -47,6 +49,7 @@ const LoginController = async (req, res, next) => {
     const user = await Login.findOne({
       $or: [{ student_id: id }, { employeeId: id }, { username: id }],
     });
+
     if (!(await user.matchPassword(password))) {
       return res.status(401).json({ message: "Invalid credentials" });
     } else if (!user) {
@@ -90,8 +93,29 @@ const ForgotPasswordController = async (req, res, next) => {
   }
 };
 
+// Only allow the currently authenticated user (user or admin) to change their own password
+const changePassword = async (req, res, next) => {
+  try {
+    const { newPassword } = req.body;
+    const user = await Login.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    if (!newPassword) {
+      return res.status(400).json({ message: "New password is required" });
+    }
+    user.password = newPassword;
+    await user.save();
+    return res.status(200).json({ message: "Password changed successfully" });
+  } catch (err) {
+    console.error("Error in changePassword:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
 module.exports = {
   LoginController,
   RegisterController,
   ForgotPasswordController,
+  changePassword,
 };
