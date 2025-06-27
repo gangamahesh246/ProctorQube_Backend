@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { upload } = require("../utils/s3upload");
-const { protect } = require("../middleware/authMiddleware");
+const { protect } = require("../middlewares/authMiddleware");
 const {
   upsertProfile,
   getProfile,

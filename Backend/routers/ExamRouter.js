@@ -2,7 +2,7 @@ const express = require('express');
 const Route = express.Router();
 const { upload } = require('../utils/s3upload');
 const { postExam, GetExam, UpdateExam, getExamById, deleteExam, getExamQuestionsById } = require('../controllers/ExamController');
-const { protect, adminOnly } = require("../middleware/authMiddleware");
+const { protect, adminOnly } = require("../middlewares/authMiddleware");
 
 Route.post('/postexam', protect, adminOnly, upload.single("coverPreview"), postExam);
 Route.get('/getexam', protect, adminOnly, GetExam);

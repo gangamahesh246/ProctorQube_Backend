@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { GetStudents, deleteBranch, PostOrUpdateStudents, PostSingleStudent, deleteStudentById, GetStudentId } = require("../controllers/studentscontroller");
-const { protect, adminOnly } = require("../middleware/authMiddleware");
+const { protect, adminOnly } = require("../middlewares/authMiddleware");
 
 router.get("/getstudents", protect, adminOnly, GetStudents);
 router.get("/getstudentId", protect, GetStudentId);

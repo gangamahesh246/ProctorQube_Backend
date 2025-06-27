@@ -4,7 +4,7 @@ const {
   PostOrUpdateQuestions,
   deleteCategory,
 } = require("../controllers/questionController");
-const { protect, adminOnly } = require("../middleware/authMiddleware");
+const { protect, adminOnly } = require("../middlewares/authMiddleware");
 
 Route.get("/getquestions", protect, adminOnly, GetQuestions);
 Route.post("/uploadquestions", protect, adminOnly, PostOrUpdateQuestions);

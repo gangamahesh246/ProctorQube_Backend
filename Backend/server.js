@@ -18,12 +18,18 @@ const login = require("./routers/LoginRouter");
 const getStudentExams = require("./routers/StudentExamRoutes");
 const Student = require("./models/studentsModel");
 const StudentExam = require("./models/StudentExam");
+const interviewQuestion = require("./routers/interviewQuestionRoutes")
+const studentDashboardRoutes = require('./routers/studentDashboardRoutes');
+const practiceTestRoutes = require('./routers/practiceTestRoutes');
+
 
 const onlineStudents = new Map();
 
 const app = express();
 const server = createServer(app);
 
+
+const port = 3000 || 3001
 app.get("/", (req, res) => {
   res.send("Hello World");
 });
@@ -41,6 +47,11 @@ app.use("/", profile);
 app.use("/", studentProfile);
 app.use("/", login);
 app.use("/", getStudentExams);
+app.use("/", interviewQuestion);
+app.use("/", studentDashboardRoutes);
+app.use("/", practiceTestRoutes);
+
+
 
 const io = new Server(server, {
   cors: {
@@ -112,6 +123,7 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(3000, () => {
+
+server.listen(port, () => {
   console.log("Server is running on http://localhost:3000");
 });

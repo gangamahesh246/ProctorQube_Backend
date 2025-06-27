@@ -9,12 +9,12 @@ const {
 const {
   protect,
   adminOnly,
-} = require("../middleware/authMiddleware");
+} = require("../middlewares/authMiddleware");
 
 router.post("/assign", protect, adminOnly, assignExamToStudent);
 
 router.get("/student", protect, getStudentExams);
 
-router.put("/complete", protect, updateExamStatus);
+router.put("/complete", updateExamStatus);
 
 module.exports = router;
