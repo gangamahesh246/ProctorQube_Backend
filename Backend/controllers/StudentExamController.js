@@ -32,7 +32,7 @@ const assignExamToStudent = async (req, res) => {
 
 const getStudentExams = async (req, res) => {
   const { student_id } = req.query;
-  
+
   if (
     !student_id ||
     typeof student_id !== "string" ||
@@ -44,7 +44,11 @@ const getStudentExams = async (req, res) => {
   try {
     const data = await StudentExam.findOne({
       student_id: new mongoose.Types.ObjectId(student_id),
-    }).populate("exams.examId");
+    }).populate({
+      path: "exams.examId",
+      select:
+        "basicInfo settings.availability.timeLimitDays.from settings.availability.timeLimitDays.to",
+    });
 
     if (!data) {
       return res.json({ exams: [] });
@@ -74,6 +78,14 @@ const updateExamStatus = async (req, res) => {
     timeTrack, 
   } = req.body;
 
+  if (
+    !student_id ||
+    typeof student_id !== "string" ||
+    !mongoose.Types.ObjectId.isValid(student_id)
+  ) {
+    return res.status(400).json({ message: "Invalid student ID format" });
+  }
+
   try {
     const result = score >= passMark ? "pass" : "fail";
 
@@ -92,7 +104,12 @@ const updateExamStatus = async (req, res) => {
     };
 
     const update = await StudentExam.updateOne(
+
       { student_id: student_id, "exams.examId": examId },
+      {
+        student_id: new mongoose.Types.ObjectId(student_id),
+        "exams.examId": examId,
+      },
       {
         $set: {
           "exams.$.status": "completed",
@@ -116,8 +133,42 @@ const updateExamStatus = async (req, res) => {
   }
 };
 
+const setStatus = async (req, res) => {
+  const { examId, status, student_id } = req.body;
+
+  if (
+    !student_id ||
+    typeof student_id !== "string" ||
+    !mongoose.Types.ObjectId.isValid(student_id)
+  ) {
+    return res.status(400).json({ message: "Invalid student ID format" });
+  }
+
+  try {
+    const update = await StudentExam.updateOne(
+      {
+        student_id: new mongoose.Types.ObjectId(student_id),
+        "exams.examId": examId,
+      },
+      { $set: { "exams.$.status": status } }
+    );
+
+    if (update.modifiedCount === 0) {
+      return res
+        .status(404)
+        .json({ message: "Exam not found or already updated." });
+    }
+
+    return res.status(200).json({ message: "Status updated successfully." });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Failed to update exam status." });
+  }
+};
+
 module.exports = {
   assignExamToStudent,
   getStudentExams,
   updateExamStatus,
+  setStatus
 };

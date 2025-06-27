@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 
 const UserProfileSchema = new mongoose.Schema({
-  // Basic Details
   userId: { 
     type: String, 
     required: true, 
@@ -25,7 +24,6 @@ const UserProfileSchema = new mongoose.Schema({
     type: String 
   },
 
-  // Education Details
   college: { 
     type: String, 
     required: true 
@@ -48,7 +46,6 @@ const UserProfileSchema = new mongoose.Schema({
     type: String 
   }],
 
-  // Personal Details
   dateOfBirth: { 
     type: Date 
   },

@@ -32,8 +32,6 @@ const examEntrySchema = new mongoose.Schema({
   examId: { type: mongoose.Schema.Types.ObjectId, ref: "Exam", required: true },
   status: {
     type: String,
-    enum: ["assigned", "completed"],
-    default: "assigned",
   },
   result: {
     type: String,
@@ -41,6 +39,11 @@ const examEntrySchema = new mongoose.Schema({
     default: "NA",
   },
   score: { type: Number, default: null },
+  ranking: { type: Number },
+  startingTime: { type: String },
+  closingTime: { type: String },
+  timeTaken: { type: Number }, 
+  score: { type: Number },
   assignedBy: { type: String },
   assignedAt: { type: Date, default: Date.now },
   stats: examStatsSchema // Embedded exam attempt details

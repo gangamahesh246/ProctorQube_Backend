@@ -1,89 +1,51 @@
 const UserProfile = require("../models/UserProfile");
-const { uploadFileToS3 } = require("../utils/s3upload");
 const bcrypt = require("bcryptjs");
+const { uploadFileToS3 } = require("../utils/s3upload");
 
-// Single upsert function for all profile details
 const upsertProfile = async (req, res) => {
   try {
-    if (!req.body) {
-      return res.status(400).json({ 
-        message: "Request body is missing. Did you use multipart/form-data?" 
-      });
-    }
-
-    const { 
-      userId, 
-      username, 
-      email, 
-      phone,
-      // Education Details
-      college,
-      department,
-      yearOfStudy,
-      rollNumber,
-      skills,
-      // Personal Details
-      dateOfBirth,
-      gender,
-      address,
-      bio,
-      guardianName,
-      guardianphone
-    } = req.body;
+    const { userId, skills, ...rest } = req.body;
 
     let photo = null;
     if (req.file) {
       try {
-        photo = await uploadFileToS3(req.file);
+        photo = await uploadFileToS3(req.file); // You must define this if using S3
       } catch (e) {
         console.error("Error uploading profile photo to S3:", e);
-        return res.status(500).json({ 
-          message: "Error uploading profile photo", 
-          error: e.message 
-        });
+        return res
+          .status(500)
+          .json({ message: "Error uploading profile photo", error: e.message });
       }
     }
 
-    const profileData = {
+    const updates = {
+      ...rest,
       userId,
-      username,
-      email,
-      phone,
-      college,
-      department,
-      yearOfStudy,
-      rollNumber,
       skills: typeof skills === "string" ? JSON.parse(skills) : skills,
-      dateOfBirth,
-      gender,
-      address,
-      bio,
-      guardianName,
-      guardianphone,
-      ...(photo && { photo })
     };
+
+    if (photo) updates.photo = photo;
 
     const existingProfile = await UserProfile.findOne({ userId });
 
     if (existingProfile) {
-      // Update existing profile
       const updatedProfile = await UserProfile.findOneAndUpdate(
         { userId },
-        { $set: profileData },
-        { new: true, runValidators: true }
+        updates,
+        { new: true }
       );
       return res.status(200).json({
         message: "Profile updated successfully",
         profile: updatedProfile,
       });
     } else {
-      // Create new profile with default password
+      // You can also hash default password if needed
       const hashedPassword = await bcrypt.hash("default123", 12);
       const newProfile = new UserProfile({
-        ...profileData,
-        password: hashedPassword
+        ...updates,
+        password: hashedPassword,
       });
-      
+
       await newProfile.save();
       return res.status(201).json({
         message: "Profile created successfully",
@@ -96,16 +58,15 @@ const upsertProfile = async (req, res) => {
   }
 };
 
-// Get Full Profile
 const getProfile = async (req, res) => {
   try {
     const { userId } = req.query;
     const profile = await UserProfile.findOne({ userId });
-    
+
     if (!profile) {
       return res.status(404).json({ message: "Profile not found" });
     }
-    
+
     res.status(200).json(profile);
   } catch (error) {
     console.error("Error in getProfile:", error);
@@ -122,8 +83,8 @@ const matchProfile = async (req, res) => {
       {
         $match: {
           $or: [
-            { userId: userId }, 
-            { username: { $regex: username, $options: 'i' } }
+            { userId: userId },
+            { username: { $regex: username, $options: "i" } },
           ],
         },
       },
@@ -134,7 +95,7 @@ const matchProfile = async (req, res) => {
           username: 1,
           photo: 1,
           college: 1,
-          department: 1
+          department: 1,
         },
       },
     ]);
@@ -150,4 +111,4 @@ module.exports = {
   upsertProfile,
   getProfile,
   matchProfile,
-}; 
+};
