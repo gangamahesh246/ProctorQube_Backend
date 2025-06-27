@@ -16,6 +16,6 @@ router.post("/assign", protect, adminOnly, assignExamToStudent);
 router.get("/student", protect, getStudentExams);
 router.post("/status", protect, setStatus);
 
-router.put("/complete", protect, updateExamStatus);
+router.put("/complete", updateExamStatus);
 
 module.exports = router;

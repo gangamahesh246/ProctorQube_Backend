@@ -8,7 +8,7 @@ Route.post('/postexam', protect, adminOnly, upload.single("coverPreview"), postE
 Route.get('/getexam', protect, adminOnly, GetExam);
 Route.get('/getexam/:examId', protect, getExamById);
 Route.get('/getexaminstructions/:examId', protect, getExamInstructions);
-Route.get('/getexamquestions/:examId', protect, adminOnly, getExamQuestionsById);
+Route.get('/getexamquestions/:examId', protect, getExamQuestionsById);
 Route.put('/updateexam/:examId', protect, adminOnly, UpdateExam);
 Route.delete('/deleteexam/:examId', protect, adminOnly, deleteExam);
 

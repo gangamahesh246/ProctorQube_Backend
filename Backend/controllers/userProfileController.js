@@ -74,7 +74,6 @@ const getProfile = async (req, res) => {
   }
 };
 
-// Match Profile (for search)
 const matchProfile = async (req, res) => {
   try {
     const { userId, username } = req.query;
@@ -96,6 +95,7 @@ const matchProfile = async (req, res) => {
           photo: 1,
           college: 1,
           department: 1,
+          fullname: 1,
         },
       },
     ]);
