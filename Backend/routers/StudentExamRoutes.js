@@ -10,7 +10,7 @@ const {
 const {
   protect,
   adminOnly,
-} = require("../middleware/authMiddleware");
+} = require("../middlewares/authMiddleware");
 
 router.post("/assign", protect, adminOnly, assignExamToStudent);
 router.get("/student", protect, getStudentExams);

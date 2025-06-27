@@ -1,6 +1,8 @@
 const express = require('express');
 const Route = express.Router();
 const { upload } = require('../utils/s3upload');
+const { postExam, GetExam, UpdateExam, getExamById, deleteExam, getExamQuestionsById } = require('../controllers/ExamController');
+const { protect, adminOnly } = require("../middlewares/authMiddleware");
 const { postExam, GetExam, UpdateExam, getExamById, deleteExam, getExamQuestionsById, getExamInstructions } = require('../controllers/ExamController');
 const { protect, adminOnly } = require("../middleware/authMiddleware");
 

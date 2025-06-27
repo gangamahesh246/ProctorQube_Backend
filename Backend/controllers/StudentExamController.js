@@ -62,7 +62,21 @@ const getStudentExams = async (req, res) => {
 };
 
 const updateExamStatus = async (req, res) => {
-  const { examId, score } = req.query;
+  const {
+    examId,
+    student_id,
+    score,
+    title,
+    subject,
+    totalMarks,
+    passMark,
+    startTime,
+    endTime,
+    duration,
+    attemptStart,
+    attemptEnd,
+    timeTrack, 
+  } = req.body;
 
   if (
     !student_id ||
@@ -73,9 +87,25 @@ const updateExamStatus = async (req, res) => {
   }
 
   try {
-    const result = score >= 35 ? "pass" : "fail";
+    const result = score >= passMark ? "pass" : "fail";
+
+    const stats = {
+      title,
+      subject,
+      totalMarks,
+      passMark,
+      startTime,
+      endTime,
+      duration,
+      score,
+      attemptStart,
+      attemptEnd,
+      timeTrack,
+    };
 
     const update = await StudentExam.updateOne(
+
+      { student_id: student_id, "exams.examId": examId },
       {
         student_id: new mongoose.Types.ObjectId(student_id),
         "exams.examId": examId,
@@ -85,6 +115,7 @@ const updateExamStatus = async (req, res) => {
           "exams.$.status": "completed",
           "exams.$.score": score,
           "exams.$.result": result,
+          "exams.$.stats": stats,
         },
       }
     );
