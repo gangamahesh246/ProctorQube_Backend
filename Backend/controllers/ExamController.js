@@ -145,6 +145,8 @@ const getExamInstructions = async (req, res) => {
           "settings.results.displayScore.passPercentage": 1,
           "settings.results.displayScore.negativeMarking": 1,
           "settings.availability.lateTime": 1,
+          "settings.availability.timeLimitDays.from": 1,
+          "settings.availability.timeLimitDays.to": 1,
           "settings.answerTimeControl.examTime": 1,
         },
       },

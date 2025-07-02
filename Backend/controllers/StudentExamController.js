@@ -47,7 +47,7 @@ const getStudentExams = async (req, res) => {
     }).populate({
       path: "exams.examId",
       select:
-        "basicInfo settings.availability.timeLimitDays.from settings.availability.timeLimitDays.to",
+        "basicInfo settings.availability.timeLimitDays.from settings.availability.timeLimitDays.to settings.availability.timeLimitHours.from settings.availability.timeLimitHours.to",
     });
 
     if (!data) {
@@ -67,7 +67,7 @@ const updateExamStatus = async (req, res) => {
     student_id,
     score,
     title,
-    subject,
+    category,
     totalMarks,
     passMark,
     startTime,
@@ -75,8 +75,8 @@ const updateExamStatus = async (req, res) => {
     duration,
     attemptStart,
     attemptEnd,
-    timeTrack, 
   } = req.body;
+
 
   if (
     !student_id ||
@@ -84,32 +84,37 @@ const updateExamStatus = async (req, res) => {
     !mongoose.Types.ObjectId.isValid(student_id)
   ) {
     return res.status(400).json({ message: "Invalid student ID format" });
+  } 
+
+  if (
+    !examId ||
+    typeof examId !== "string" ||
+    !mongoose.Types.ObjectId.isValid(examId)
+  ) {
+    return res.status(400).json({ message: "Invalid exam ID format" });
   }
 
   try {
     const result = score >= passMark ? "pass" : "fail";
 
     const stats = {
-      title,
-      subject,
+      title: title?.trim() || "Untitled",
+      category: category?.trim() || "General",
       totalMarks,
       passMark,
-      startTime,
-      endTime,
+      startTime: new Date(startTime),
+      endTime: new Date(endTime),
       duration,
       score,
-      attemptStart,
-      attemptEnd,
-      timeTrack,
+      attemptStart: new Date(attemptStart),
+      attemptEnd: new Date(attemptEnd),
     };
 
-    const update = await StudentExam.updateOne(
+    const studentObjectId = new mongoose.Types.ObjectId(student_id);
+    const examObjectId = new mongoose.Types.ObjectId(examId);
 
-      { student_id: student_id, "exams.examId": examId },
-      {
-        student_id: new mongoose.Types.ObjectId(student_id),
-        "exams.examId": examId,
-      },
+    const update = await StudentExam.updateOne(
+      { student_id: studentObjectId, "exams.examId": examObjectId },
       {
         $set: {
           "exams.$.status": "completed",
@@ -121,15 +126,15 @@ const updateExamStatus = async (req, res) => {
     );
 
     if (update.modifiedCount === 0) {
-      return res
-        .status(404)
-        .json({ message: "Exam not found or already updated." });
+      return res.status(404).json({
+        message: "Exam not found or already updated.",
+      });
     }
 
-    res.status(200).json({ message: "Exam updated successfully." });
+    return res.status(200).json({ message: "Exam updated successfully." });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to update exam status." });
+    console.error("Error updating exam status:", err);
+    return res.status(500).json({ message: "Failed to update exam status." });
   }
 };
 
@@ -170,5 +175,5 @@ module.exports = {
   assignExamToStudent,
   getStudentExams,
   updateExamStatus,
-  setStatus
+  setStatus,
 };

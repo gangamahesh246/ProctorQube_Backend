@@ -39,7 +39,6 @@ const upsertProfile = async (req, res) => {
         profile: updatedProfile,
       });
     } else {
-      // You can also hash default password if needed
       const hashedPassword = await bcrypt.hash("default123", 12);
       const newProfile = new UserProfile({
         ...updates,

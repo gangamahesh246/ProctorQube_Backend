@@ -140,7 +140,7 @@ const GetStudentId = async (req, res) => {
   const { student_mail } = req.query;
 
   try {
-    const student = await Students.findOne({ student_mail }, { _id: 1 });
+    const student = await Students.findOne({ student_mail });
 
     if (!student) {
       return res.status(404).json({ message: "Student not found" });

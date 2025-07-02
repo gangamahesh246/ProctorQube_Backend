@@ -35,6 +35,7 @@ const RegisterController = async (req, res, next) => {
         student_id: std.student_id,
         username: std.username,
         isAdmin: std.isAdmin,
+        _id: std._id,
       },
     });
   } catch (err) {

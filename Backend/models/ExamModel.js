@@ -23,7 +23,10 @@ const ExamSchema = new mongoose.Schema({
         from: { type: String },
         to: { type: String },
       },
-      permanent: { type: Boolean },
+      timeLimitHours: {
+        from: { type: String }, 
+        to: { type: String }, 
+      },
       lateTime: { type: String },
     },
     examTakenTimes: {
