@@ -1,12 +1,5 @@
 const mongoose = require("mongoose");
 
-const timeTrackSchema = new mongoose.Schema(
-  {
-    questionNo: { type: Number, required: true },
-    timeSpent: { type: Number, required: true }, 
-  },
-  { _id: false } 
-);
 
 const examStatsSchema = new mongoose.Schema(
   {
@@ -20,36 +13,51 @@ const examStatsSchema = new mongoose.Schema(
     score: { type: Number, default: null },
     attemptStart: { type: Date, required: true },
     attemptEnd: { type: Date, required: true },
-    timeTrack: [timeTrackSchema],
+    tabSwitchingVialotion: { type: Number, default: 0 },
+    copyPasteViolation: { type: Number, default: 0 },
+    devtoolsViolation: { type: Number, default: 0 },
+    keyboardShortcutViolation: { type: Number, default: 0 },
+    rightClickViolation: { type: Number, default: 0 },
+    webcamVialotion: { type: Number, default: 0 },
+    vialotionPhotos: { type: [String], default: [] },
+  },
+  { _id: false }
+);
+
+const attemptSchema = new mongoose.Schema(
+  {
+    score: { type: Number, default: null },
+    result: { type: String, enum: ["pass", "fail", "NA"], default: "NA" },
+    attemptStart: { type: Date, required: true },
+    attemptEnd: { type: Date, required: true },
+    stats: examStatsSchema,
   },
   { _id: false }
 );
 
 const examEntrySchema = new mongoose.Schema({
   examId: { type: mongoose.Schema.Types.ObjectId, ref: "Exam", required: true },
-  status: {
-    type: String,
-  },
-  result: {
-    type: String,
-    enum: ["pass", "fail", "NA"],
-    default: "NA",
-  },
-  score: { type: Number, default: null },
+
+  status: { type: String }, 
+  result: { type: String, enum: ["pass", "fail", "NA"], default: "NA" },
+  score: { type: Number, default: null }, 
   ranking: { type: Number },
+
   startingTime: { type: String },
   closingTime: { type: String },
-  timeTaken: { type: Number }, 
-  score: { type: Number },
+  timeTaken: { type: Number },
+
   assignedBy: { type: String },
   assignedAt: { type: Date, default: Date.now },
-  stats: examStatsSchema 
+
+  stats: examStatsSchema, 
+  attempts: [attemptSchema], 
 });
 
 const studentExamSchema = new mongoose.Schema({
   student_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User", 
+    ref: "User",
     required: true,
     unique: true,
   },

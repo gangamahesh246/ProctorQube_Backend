@@ -46,8 +46,7 @@ const getStudentExams = async (req, res) => {
       student_id: new mongoose.Types.ObjectId(student_id),
     }).populate({
       path: "exams.examId",
-      select:
-        "basicInfo settings.availability.timeLimitDays.from settings.availability.timeLimitDays.to settings.availability.timeLimitHours.from settings.availability.timeLimitHours.to",
+      select: "basicInfo settings.availability settings.results.displayScore.enabled",
     });
 
     if (!data) {
@@ -77,14 +76,13 @@ const updateExamStatus = async (req, res) => {
     attemptEnd,
   } = req.body;
 
-
   if (
     !student_id ||
     typeof student_id !== "string" ||
     !mongoose.Types.ObjectId.isValid(student_id)
   ) {
     return res.status(400).json({ message: "Invalid student ID format" });
-  } 
+  }
 
   if (
     !examId ||
@@ -95,6 +93,46 @@ const updateExamStatus = async (req, res) => {
   }
 
   try {
+    const studentObjectId = new mongoose.Types.ObjectId(student_id);
+    const examObjectId = new mongoose.Types.ObjectId(examId);
+
+    const studentDoc = await StudentExam.findOne({
+      student_id: studentObjectId,
+      "exams.examId": examObjectId,
+    });
+
+    if (!studentDoc) {
+      return res.status(404).json({ message: "Exam not found for student." });
+    }
+
+    const examEntry = studentDoc.exams.find((e) =>
+      e.examId.equals(examObjectId)
+    );
+
+    if (!examEntry) {
+      return res.status(404).json({ message: "Exam not found in student record." });
+    }
+
+    const attemptCount = examEntry.attempts?.length;
+
+    const examModel = await mongoose.model("Exam").findById(examObjectId);
+
+    const examTakenTimes = examModel?.settings?.examTakenTimes;
+
+    const maxAttempts =
+      examTakenTimes?.type === "multiple"
+        ? examTakenTimes?.multiple
+        : examTakenTimes?.type === "one"
+        ? 1
+        : Infinity;
+
+    if (attemptCount >= maxAttempts) {
+      return res.status(403).json({
+        message: `You have exceeded the allowed number of attempts (${maxAttempts}).`,
+      });
+    }
+
+    const isLastAttempt = attemptCount + 1 >= maxAttempts;
     const result = score >= passMark ? "pass" : "fail";
 
     const stats = {
@@ -110,33 +148,45 @@ const updateExamStatus = async (req, res) => {
       attemptEnd: new Date(attemptEnd),
     };
 
-    const studentObjectId = new mongoose.Types.ObjectId(student_id);
-    const examObjectId = new mongoose.Types.ObjectId(examId);
-
+    const updatePayload = {
+      $set: {
+        "exams.$.score": score,
+        "exams.$.result": result,
+        "exams.$.stats": stats,
+        ...(isLastAttempt && { "exams.$.status": "completed" }),
+      },
+      $push: {
+        "exams.$.attempts": {
+          score,
+          result,
+          attemptStart: new Date(attemptStart),
+          attemptEnd: new Date(attemptEnd),
+          stats,
+        },
+      },
+    };
     const update = await StudentExam.updateOne(
       { student_id: studentObjectId, "exams.examId": examObjectId },
-      {
-        $set: {
-          "exams.$.status": "completed",
-          "exams.$.score": score,
-          "exams.$.result": result,
-          "exams.$.stats": stats,
-        },
-      }
+      updatePayload
     );
 
     if (update.modifiedCount === 0) {
       return res.status(404).json({
-        message: "Exam not found or already updated.",
+        message: "Exam not updated or already completed.",
       });
     }
 
-    return res.status(200).json({ message: "Exam updated successfully." });
+    return res.status(200).json({
+      message: isLastAttempt
+        ? "Final attempt submitted. Exam marked as completed."
+        : `Attempt ${attemptCount + 1}/${maxAttempts} submitted.`,
+    });
   } catch (err) {
     console.error("Error updating exam status:", err);
     return res.status(500).json({ message: "Failed to update exam status." });
   }
 };
+
 
 const setStatus = async (req, res) => {
   const { examId, status, student_id } = req.body;

@@ -45,15 +45,9 @@ const ExamSchema = new mongoose.Schema({
     assignExamTo: {
       specificUsers: [],
     },
-    autoSubmit: {
-      disableAutoSubmit: { type: Boolean },
-      autoSubmitAtEnd: { type: Boolean }
-    },
     results: {
       displayScore: {
         enabled: { type: Boolean },
-        showRankingList: { type: Boolean },
-        totalPoints: { type: Number },
         passPercentage: { type: Number },
         negativeMarking: { type: Number },
       },

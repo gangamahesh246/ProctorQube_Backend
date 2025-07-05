@@ -93,6 +93,8 @@ const GetExam = async (req, res) => {
           "settings.availability.lateTime": 1,
           "settings.availability.timeLimitDays.from": 1,
           "settings.availability.timeLimitDays.to": 1,
+          "settings.availability.timeLimitHours.from": 1,
+          "settings.availability.timeLimitHours.to": 1,
         },
       },
     ]);
@@ -147,7 +149,10 @@ const getExamInstructions = async (req, res) => {
           "settings.availability.lateTime": 1,
           "settings.availability.timeLimitDays.from": 1,
           "settings.availability.timeLimitDays.to": 1,
+          "settings.availability.timeLimitHours.to": 1,
           "settings.answerTimeControl.examTime": 1,
+          "settings.answerTimeControl.type": 1,
+          "settings.answerTimeControl.questionTime": 1,
         },
       },
     ]);
