@@ -19,6 +19,7 @@ const StudentExam = require("./models/StudentExam");
 const interviewQuestion = require("./routers/interviewQuestionRoutes")
 const studentDashboardRoutes = require('./routers/studentDashboardRoutes');
 const practiceTestRoutes = require('./routers/practiceTestRoutes');
+const imageProxy = require('./routers/BaseRouter');
 
 
 const onlineStudents = new Map();
@@ -49,6 +50,7 @@ app.use("/", getStudentExams);
 app.use("/", interviewQuestion);
 app.use("/", studentDashboardRoutes);
 app.use("/", practiceTestRoutes);
+app.use("/api", imageProxy);
 
 
 

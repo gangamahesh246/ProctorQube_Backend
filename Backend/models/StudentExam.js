@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-
 const examStatsSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
@@ -13,12 +12,14 @@ const examStatsSchema = new mongoose.Schema(
     score: { type: Number, default: null },
     attemptStart: { type: Date, required: true },
     attemptEnd: { type: Date, required: true },
-    tabSwitchingVialotion: { type: Number, default: 0 },
-    copyPasteViolation: { type: Number, default: 0 },
-    devtoolsViolation: { type: Number, default: 0 },
-    keyboardShortcutViolation: { type: Number, default: 0 },
-    rightClickViolation: { type: Number, default: 0 },
-    webcamVialotion: { type: Number, default: 0 },
+    violations: {
+      tabSwitchingViolation: { type: Number, default: 0 },
+      devtoolsViolation: { type: Number, default: 0 },
+      rightClickViolation: { type: Number, default: 0 },
+      webcamViolation: { type: Number, default: 0 },
+      soundViolation: { type: Number, default: 0 },
+      fullscreenViolation: { type: Number, default: 0 },
+    },
     vialotionPhotos: { type: [String], default: [] },
   },
   { _id: false }
@@ -38,9 +39,9 @@ const attemptSchema = new mongoose.Schema(
 const examEntrySchema = new mongoose.Schema({
   examId: { type: mongoose.Schema.Types.ObjectId, ref: "Exam", required: true },
 
-  status: { type: String }, 
+  status: { type: String },
   result: { type: String, enum: ["pass", "fail", "NA"], default: "NA" },
-  score: { type: Number, default: null }, 
+  score: { type: Number, default: null },
   ranking: { type: Number },
 
   startingTime: { type: String },
@@ -50,8 +51,8 @@ const examEntrySchema = new mongoose.Schema({
   assignedBy: { type: String },
   assignedAt: { type: Date, default: Date.now },
 
-  stats: examStatsSchema, 
-  attempts: [attemptSchema], 
+  stats: examStatsSchema,
+  attempts: [attemptSchema],
 });
 
 const studentExamSchema = new mongoose.Schema({

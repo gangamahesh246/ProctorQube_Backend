@@ -54,10 +54,9 @@ const ExamSchema = new mongoose.Schema({
     }, 
     antiCheating: {
       switchingScreen: { type: Number },
-      interruptionExceeds: { type: Boolean },
-      copyPastePrevention: { type: Boolean },
       forceFullscreen: { type: Boolean },
       webcam: { type: Boolean },
+      noiseDetection: { type: Boolean },
     },
   },
 }, { timestamps: true });

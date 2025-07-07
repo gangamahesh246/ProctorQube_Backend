@@ -46,7 +46,7 @@ const getStudentExams = async (req, res) => {
       student_id: new mongoose.Types.ObjectId(student_id),
     }).populate({
       path: "exams.examId",
-      select: "basicInfo settings.availability settings.results.displayScore.enabled",
+      select: "basicInfo settings.availability settings.results.displayScore.enabled settings.examTakenTimes",
     });
 
     if (!data) {

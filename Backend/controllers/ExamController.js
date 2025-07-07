@@ -188,6 +188,7 @@ const getExamQuestionsById = async (req, res) => {
           "basicInfo.title": 1,
           createdAt: 1,
           questions: 1,
+          "settings.antiCheating": 1,
         },
       },
     ]);
