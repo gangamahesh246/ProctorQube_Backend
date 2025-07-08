@@ -221,9 +221,55 @@ const setStatus = async (req, res) => {
   }
 };
 
+const storeViolationPhoto = async (req, res) => {
+  try {
+    const { studentId, examId } = req.body;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: "No file uploaded." });
+    }
+
+    if (
+      !studentId ||
+      !examId ||
+      !mongoose.Types.ObjectId.isValid(studentId) ||
+      !mongoose.Types.ObjectId.isValid(examId)
+    ) {
+      return res.status(400).json({ message: "Invalid studentId or examId." });
+    }
+
+    const imagePath = `/public/${file.filename}`;
+
+    const update = await StudentExam.updateOne(
+      { student_id: studentId, "exams.examId": examId },
+      {
+        $push: {
+          "exams.$.stats.violationPhotos": imagePath,
+        },
+      }
+    );
+
+    if (update.modifiedCount === 0) {
+      return res
+        .status(404)
+        .json({ message: "Student or exam not found." });
+    }
+
+    res.status(200).json({
+      message: "Violation image stored.",
+      path: imagePath,
+    });
+  } catch (err) {
+    console.error("storeViolationPhoto error:", err);
+    res.status(500).json({ message: "Failed to store violation image." });
+  }
+};
+
 module.exports = {
   assignExamToStudent,
   getStudentExams,
   updateExamStatus,
   setStatus,
+  storeViolationPhoto
 };

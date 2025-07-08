@@ -20,7 +20,7 @@ const examStatsSchema = new mongoose.Schema(
       soundViolation: { type: Number, default: 0 },
       fullscreenViolation: { type: Number, default: 0 },
     },
-    vialotionPhotos: { type: [String], default: [] },
+    violationPhotos: { type: [String], default: [] },
   },
   { _id: false }
 );
