@@ -94,7 +94,6 @@ const ForgotPasswordController = async (req, res, next) => {
   }
 };
 
-// Only allow the currently authenticated user (user or admin) to change their own password
 const changePassword = async (req, res, next) => {
   try {
     const { newPassword } = req.body;

@@ -75,15 +75,12 @@ const getProfile = async (req, res) => {
 
 const matchProfile = async (req, res) => {
   try {
-    const { userId, username } = req.query;
+    const { userId } = req.query;
 
     const match = await UserProfile.aggregate([
       {
         $match: {
-          $or: [
-            { userId: userId },
-            { username: { $regex: username, $options: "i" } },
-          ],
+          userId: userId
         },
       },
       {
