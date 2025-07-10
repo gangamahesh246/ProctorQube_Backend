@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 const { getStudentDashboard } = require('../controllers/studentDashboardController');
-const { protect } = require('../middlewares/authMiddleware'); // ✅ correctly importing 'protect'
+const { protectStudent } = require('../middlewares/authMiddleware'); 
 
-router.get('/dashboard', protect, getStudentDashboard); // ✅ using the correct middleware function
+router.get('/dashboard', protectStudent, getStudentDashboard); 
 
 module.exports = router;

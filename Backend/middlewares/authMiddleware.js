@@ -1,7 +1,8 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/Login");
+const Student = require("../models/StudentLogin");
+const Admin = require("../models/AdminLogin");
 
-const protect = async (req, res, next) => {
+const protectStudent = async (req, res, next) => {
   let token;
   if (
     req.headers.authorization &&
@@ -10,28 +11,37 @@ const protect = async (req, res, next) => {
     try {
       token = req.headers.authorization.split(" ")[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = await User.findById(decoded.id).select("-password");
+      req.user = await Student.findById(decoded.id).select("-password");
+      if (!req.user)
+        return res.status(401).json({ message: "Student not found" });
       next();
     } catch (err) {
       return res.status(401).json({ message: "Invalid token" });
     }
   } else {
-    if (process.env.NODE_ENV !== 'production') {
-      // Allow through for development/testing
-      console.warn("No token provided. Allowing request for development.");
-      req.user = { _id: 'devuser', isAdmin: true, username: 'dev' };
-      return next();
-    }
     return res.status(401).json({ message: "No token provided" });
   }
 };
 
-const adminOnly = (req, res, next) => {
-  if (req.user && req.user.isAdmin) {
-    next();
+const protectAdmin = async (req, res, next) => {
+  let token;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    try {
+      token = req.headers.authorization.split(" ")[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = await Admin.findById(decoded.id).select("-password");
+      if (!req.user)
+        return res.status(401).json({ message: "Admin not found" });
+      next();
+    } catch (err) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
   } else {
-    res.status(403).json({ message: "Admin access only" });
+    return res.status(401).json({ message: "No token provided" });
   }
 };
 
-module.exports = { protect, adminOnly };
+module.exports = { protectStudent, protectAdmin };

@@ -2,14 +2,14 @@ const express = require('express');
 const Route = express.Router();
 const { upload } = require('../utils/s3upload');
 const { postExam, GetExam, UpdateExam, getExamById, deleteExam, getExamQuestionsById, getExamInstructions } = require('../controllers/ExamController');
-const { protect, adminOnly } = require("../middlewares/authMiddleware");
+const { protectAdmin, protectStudent } = require("../middlewares/authMiddleware");
 
-Route.post('/postexam', protect, adminOnly, upload.single("coverPreview"), postExam);
-Route.get('/getexam', protect, adminOnly, GetExam);
-Route.get('/getexam/:examId', protect, getExamById);
-Route.get('/getexaminstructions/:examId', protect, getExamInstructions);
-Route.get('/getexamquestions/:examId', protect, getExamQuestionsById);
-Route.put('/updateexam/:examId', protect, adminOnly, UpdateExam);
-Route.delete('/deleteexam/:examId', protect, adminOnly, deleteExam);
+Route.post('/postexam', protectAdmin, upload.single("coverPreview"), postExam);
+Route.get('/getexam', protectAdmin, GetExam);
+Route.get('/getexam/:examId', protectStudent, getExamById);
+Route.get('/getexaminstructions/:examId', protectStudent, getExamInstructions);
+Route.get('/getexamquestions/:examId', protectStudent, getExamQuestionsById);
+Route.put('/updateexam/:examId', protectAdmin, UpdateExam);
+Route.delete('/deleteexam/:examId', protectAdmin, deleteExam);
 
 module.exports = Route;

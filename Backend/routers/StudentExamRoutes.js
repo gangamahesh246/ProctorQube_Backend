@@ -9,16 +9,16 @@ const {
 } = require("../controllers/StudentExamController");
 
 const {
-  protect,
-  adminOnly,
+  protectAdmin,
+  protectStudent
 } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/Upload");
 
-router.post("/assign", protect, adminOnly, assignExamToStudent);
-router.get("/student", protect, getStudentExams);
-router.post("/status", protect, setStatus);
+router.post("/assign", protectAdmin, assignExamToStudent);
+router.get("/student", protectStudent, getStudentExams);
+router.post("/status", protectStudent, setStatus);
 
-router.post("/student/complete", protect, updateExamStatus);
-router.post("/student/violation", protect, upload.single("violationImage"), updateExamStatus);
+router.post("/student/complete", protectStudent, updateExamStatus);
+router.post("/student/violation", protectStudent, upload.single("violationImage"), storeViolationPhoto);
 
 module.exports = router;

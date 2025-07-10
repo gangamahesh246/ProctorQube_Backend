@@ -9,10 +9,11 @@ connectDB();
 const exam = require("./routers/ExamRouter");
 const question = require("./routers/questionRoute");
 const student = require("./routers/studentsRoute");
-const profile = require("./routers/profileRouter");
+const Adminprofile = require("./routers/profileRouter");
 
 const studentProfile = require("./routers/userProfileRouter");
-const login = require("./routers/LoginRouter");
+const adminRoutes  = require("./routers/AdminLoginRouter");
+const studentRoutes   = require("./routers/StudentLoginRouter");
 const getStudentExams = require("./routers/StudentExamRoutes");
 const Student = require("./models/studentsModel");
 const StudentExam = require("./models/StudentExam");
@@ -42,17 +43,17 @@ app.use("/public", express.static("public"));
 app.use("/", exam);
 app.use("/", question);
 app.use("/", student);
-app.use("/", profile);
+app.use("/", Adminprofile);
 
 app.use("/", studentProfile);
-app.use("/", login);
+app.use("/", adminRoutes);
+app.use("/", studentRoutes);
 app.use("/", getStudentExams);
 app.use("/", interviewQuestion);
 app.use("/", studentDashboardRoutes);
 app.use("/", practiceTestRoutes);
+
 app.use("/api", imageProxy);
-
-
 
 const io = new Server(server, {
   cors: {

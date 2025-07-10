@@ -4,11 +4,11 @@ const {
   PostOrUpdateQuestions,
   deleteCategory,
 } = require("../controllers/questionController");
-const { protect, adminOnly } = require("../middlewares/authMiddleware");
+const { protectAdmin } = require("../middlewares/authMiddleware");
 
-Route.get("/getquestions", protect, adminOnly, GetQuestions);
-Route.post("/uploadquestions", protect, adminOnly, PostOrUpdateQuestions);
-Route.delete("/deletecategory", protect, adminOnly, deleteCategory);
+Route.get("/getquestions", protectAdmin, GetQuestions);
+Route.post("/uploadquestions", protectAdmin, PostOrUpdateQuestions);
+Route.delete("/deletecategory", protectAdmin, deleteCategory);
 
 module.exports = Route;
 
