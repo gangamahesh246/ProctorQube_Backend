@@ -6,9 +6,9 @@ const { protectAdmin, protectStudent } = require("../middlewares/authMiddleware"
 
 Route.post('/postexam', protectAdmin, upload.single("coverPreview"), postExam);
 Route.get('/getexam', protectAdmin, GetExam);
-Route.get('/getexam/:examId', protectStudent, getExamById);
+Route.get('/getexam/:examId', getExamById);
 Route.get('/getexaminstructions/:examId', protectStudent, getExamInstructions);
-Route.get('/getexamquestions/:examId', protectStudent, getExamQuestionsById);
+Route.get('/getexamquestions/:examId', getExamQuestionsById);
 Route.put('/updateexam/:examId', protectAdmin, UpdateExam);
 Route.delete('/deleteexam/:examId', protectAdmin, deleteExam);
 

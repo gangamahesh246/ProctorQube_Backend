@@ -40,14 +40,8 @@ const examEntrySchema = new mongoose.Schema({
   examId: { type: mongoose.Schema.Types.ObjectId, ref: "Exam", required: true },
 
   status: { type: String },
-  result: { type: String, enum: ["pass", "fail", "NA"], default: "NA" },
-  score: { type: Number, default: null },
   ranking: { type: Number },
-
-  startingTime: { type: String },
-  closingTime: { type: String },
   timeTaken: { type: Number },
-
   assignedBy: { type: String },
   assignedAt: { type: Date, default: Date.now },
 

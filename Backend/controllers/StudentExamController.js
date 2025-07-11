@@ -46,7 +46,8 @@ const getStudentExams = async (req, res) => {
       student_id: new mongoose.Types.ObjectId(student_id),
     }).populate({
       path: "exams.examId",
-      select: "basicInfo settings.availability settings.results.displayScore.enabled settings.examTakenTimes",
+      select:
+        "basicInfo settings.availability settings.results.displayScore.enabled settings.examTakenTimes",
     });
 
     if (!data) {
@@ -74,6 +75,8 @@ const updateExamStatus = async (req, res) => {
     duration,
     attemptStart,
     attemptEnd,
+    timeTaken,
+    violations = {},
   } = req.body;
 
   if (
@@ -110,13 +113,14 @@ const updateExamStatus = async (req, res) => {
     );
 
     if (!examEntry) {
-      return res.status(404).json({ message: "Exam not found in student record." });
+      return res
+        .status(404)
+        .json({ message: "Exam not found in student record." });
     }
 
-    const attemptCount = examEntry.attempts?.length;
+    const attemptCount = examEntry.attempts?.length || 0;
 
     const examModel = await mongoose.model("Exam").findById(examObjectId);
-
     const examTakenTimes = examModel?.settings?.examTakenTimes;
 
     const maxAttempts =
@@ -146,13 +150,14 @@ const updateExamStatus = async (req, res) => {
       score,
       attemptStart: new Date(attemptStart),
       attemptEnd: new Date(attemptEnd),
+      timeTaken,
+      violations,
     };
 
     const updatePayload = {
       $set: {
         "exams.$.score": score,
         "exams.$.result": result,
-        "exams.$.stats": stats,
         ...(isLastAttempt && { "exams.$.status": "completed" }),
       },
       $push: {
@@ -161,10 +166,12 @@ const updateExamStatus = async (req, res) => {
           result,
           attemptStart: new Date(attemptStart),
           attemptEnd: new Date(attemptEnd),
+          timeTaken,
           stats,
         },
       },
     };
+
     const update = await StudentExam.updateOne(
       { student_id: studentObjectId, "exams.examId": examObjectId },
       updatePayload
@@ -186,7 +193,6 @@ const updateExamStatus = async (req, res) => {
     return res.status(500).json({ message: "Failed to update exam status." });
   }
 };
-
 
 const setStatus = async (req, res) => {
   const { examId, status, student_id } = req.body;
@@ -239,10 +245,16 @@ const storeViolationPhoto = async (req, res) => {
       return res.status(400).json({ message: "Invalid studentId or examId." });
     }
 
+    const studentObjectId = new mongoose.Types.ObjectId(studentId);
+    const examObjectId = new mongoose.Types.ObjectId(examId);
+
     const imagePath = `/public/${file.filename}`;
 
-    const update = await StudentExam.updateOne(
-      { student_id: studentId, "exams.examId": examId },
+    const updateResult = await StudentExam.updateOne(
+      {
+        student_id: studentObjectId,
+        "exams.examId": examObjectId,
+      },
       {
         $push: {
           "exams.$.stats.violationPhotos": imagePath,
@@ -250,19 +262,21 @@ const storeViolationPhoto = async (req, res) => {
       }
     );
 
-    if (update.modifiedCount === 0) {
+    if (updateResult.modifiedCount === 0) {
       return res
         .status(404)
-        .json({ message: "Student or exam not found." });
+        .json({ message: "Student or exam not found or update failed." });
     }
 
-    res.status(200).json({
-      message: "Violation image stored.",
+    return res.status(200).json({
+      message: "Violation image stored successfully.",
       path: imagePath,
     });
   } catch (err) {
     console.error("storeViolationPhoto error:", err);
-    res.status(500).json({ message: "Failed to store violation image." });
+    return res
+      .status(500)
+      .json({ message: "Failed to store violation image." });
   }
 };
 
@@ -271,5 +285,5 @@ module.exports = {
   getStudentExams,
   updateExamStatus,
   setStatus,
-  storeViolationPhoto
+  storeViolationPhoto,
 };
