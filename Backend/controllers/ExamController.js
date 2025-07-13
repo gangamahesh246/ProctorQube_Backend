@@ -5,8 +5,6 @@ const { uploadFileToS3 } = require("../utils/s3upload");
 
 const postExam = async (req, res) => {
   try {
-    console.log("BODY:", req.body);
-    console.log("FILE:", req.file);
 
     let questions, settings;
     try {

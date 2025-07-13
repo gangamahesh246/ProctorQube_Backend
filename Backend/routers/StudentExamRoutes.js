@@ -5,12 +5,11 @@ const {
   getStudentExams,
   updateExamStatus,
   setStatus,
-  storeViolationPhoto
 } = require("../controllers/StudentExamController");
 
 const {
   protectAdmin,
-  protectStudent
+  protectStudent,
 } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/Upload");
 
@@ -18,7 +17,8 @@ router.post("/assign", protectAdmin, assignExamToStudent);
 router.get("/student", protectStudent, getStudentExams);
 router.post("/status", protectStudent, setStatus);
 
-router.post("/student/complete", protectStudent, updateExamStatus);
-router.post("/student/violation", protectStudent, upload.single("violationImage"), storeViolationPhoto);
+router.post("/student/complete", protectStudent, upload.array("violationImage", 5), updateExamStatus);
+
+
 
 module.exports = router;

@@ -2,16 +2,16 @@ const mongoose = require("mongoose");
 
 const examStatsSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
+    title: { type: String },
     subject: { type: String },
-    totalMarks: { type: Number, required: true },
-    passMark: { type: Number, required: true },
-    startTime: { type: Date, required: true },
-    endTime: { type: Date, required: true },
+    totalMarks: { type: Number },
+    passMark: { type: Number },
+    startTime: { type: Date },
+    endTime: { type: Date },
     duration: { type: Number },
     score: { type: Number, default: null },
-    attemptStart: { type: Date, required: true },
-    attemptEnd: { type: Date, required: true },
+    attemptStart: { type: Date },
+    attemptEnd: { type: Date },
     violations: {
       tabSwitchingViolation: { type: Number, default: 0 },
       devtoolsViolation: { type: Number, default: 0 },
@@ -29,8 +29,8 @@ const attemptSchema = new mongoose.Schema(
   {
     score: { type: Number, default: null },
     result: { type: String, enum: ["pass", "fail", "NA"], default: "NA" },
-    attemptStart: { type: Date, required: true },
-    attemptEnd: { type: Date, required: true },
+    attemptStart: { type: Date },
+    attemptEnd: { type: Date },
     stats: examStatsSchema,
   },
   { _id: false }
@@ -44,8 +44,7 @@ const examEntrySchema = new mongoose.Schema({
   timeTaken: { type: Number },
   assignedBy: { type: String },
   assignedAt: { type: Date, default: Date.now },
-
-  stats: examStatsSchema,
+  
   attempts: [attemptSchema],
 });
 

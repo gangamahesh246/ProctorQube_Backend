@@ -4,8 +4,10 @@ const { Server } = require("socket.io");
 const bodyParser = require("body-parser");
 require("dotenv").config();
 const cors = require("cors");
+const cron = require("node-cron");
 const connectDB = require("./config/database");
 connectDB();
+const deleteOldViolationImages = require("./utils/cleanupViolations");
 const exam = require("./routers/ExamRouter");
 const question = require("./routers/questionRoute");
 const student = require("./routers/studentsRoute");
@@ -28,6 +30,9 @@ const onlineStudents = new Map();
 const app = express();
 const server = createServer(app);
 
+cron.schedule("0 2 * * *", () => {
+  deleteOldViolationImages();
+});
 
 const port = 3000 || 3001
 app.get("/", (req, res) => {
