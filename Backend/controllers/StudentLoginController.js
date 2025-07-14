@@ -28,6 +28,7 @@ exports.registerStudent = async (req, res, next) => {
         _id: newStudent._id,
         username: newStudent.username,
         college_mail: newStudent.college_mail,
+        password: newStudent.password,
       },
     });
   } catch (err) {
@@ -52,6 +53,7 @@ exports.loginStudent = async (req, res, next) => {
         _id: student._id,
         username: student.username,
         college_mail: student.college_mail,
+        password: student.password
       },
     });
   } catch (err) {

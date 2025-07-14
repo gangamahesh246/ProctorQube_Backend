@@ -1,11 +1,6 @@
 const mongoose = require("mongoose");
 
 const UserProfileSchema = new mongoose.Schema({
-  userId: { 
-    type: String, 
-    required: true, 
-    unique: true 
-  },
   username: { 
     type: String, 
     required: true 
@@ -24,10 +19,6 @@ const UserProfileSchema = new mongoose.Schema({
     type: String, 
     required: true 
   },
-  photo: { 
-    type: String 
-  },
-
   college: { 
     type: String, 
     required: true 
@@ -37,7 +28,7 @@ const UserProfileSchema = new mongoose.Schema({
     required: true 
   },
   yearOfStudy: { 
-    type: Number, 
+    type: String, 
     required: true,
     min: 1,
     max: 10
@@ -71,8 +62,6 @@ const UserProfileSchema = new mongoose.Schema({
     type: String, 
     required: true 
   },
-
-  // Password (hashed)
   password: { 
     type: String, 
     required: true 

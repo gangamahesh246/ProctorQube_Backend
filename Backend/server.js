@@ -13,7 +13,7 @@ const question = require("./routers/questionRoute");
 const student = require("./routers/studentsRoute");
 const Adminprofile = require("./routers/profileRouter");
 
-const studentProfile = require("./routers/userProfileRouter");
+const studentProfile = require("./routers/StudentProfileRouter");
 const adminRoutes  = require("./routers/AdminLoginRouter");
 const studentRoutes   = require("./routers/StudentLoginRouter");
 const getStudentExams = require("./routers/StudentExamRoutes");

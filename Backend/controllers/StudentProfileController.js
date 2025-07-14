@@ -1,36 +1,21 @@
-const UserProfile = require("../models/UserProfile");
+const UserProfile = require("../models/StudentProfile");
 const bcrypt = require("bcryptjs");
-const { uploadFileToS3 } = require("../utils/s3upload");
 
 const upsertProfile = async (req, res) => {
   try {
-    const { userId, skills, ...rest } = req.body;
-
-    let photo = null;
-    if (req.file) {
-      try {
-        photo = await uploadFileToS3(req.file); // You must define this if using S3
-      } catch (e) {
-        console.error("Error uploading profile photo to S3:", e);
-        return res
-          .status(500)
-          .json({ message: "Error uploading profile photo", error: e.message });
-      }
-    }
+    const { email, skills, ...rest } = req.body;
 
     const updates = {
       ...rest,
-      userId,
+      email,
       skills: typeof skills === "string" ? JSON.parse(skills) : skills,
     };
 
-    if (photo) updates.photo = photo;
-
-    const existingProfile = await UserProfile.findOne({ userId });
+    const existingProfile = await UserProfile.findOne({ email });
 
     if (existingProfile) {
       const updatedProfile = await UserProfile.findOneAndUpdate(
-        { userId },
+        { email },
         updates,
         { new: true }
       );
@@ -59,8 +44,8 @@ const upsertProfile = async (req, res) => {
 
 const getProfile = async (req, res) => {
   try {
-    const { userId } = req.query;
-    const profile = await UserProfile.findOne({ userId });
+    const { email } = req.query;
+    const profile = await UserProfile.findOne({ email });
 
     if (!profile) {
       return res.status(404).json({ message: "Profile not found" });
@@ -80,7 +65,7 @@ const matchProfile = async (req, res) => {
     const match = await UserProfile.aggregate([
       {
         $match: {
-          userId: userId
+          userId: userId,
         },
       },
       {

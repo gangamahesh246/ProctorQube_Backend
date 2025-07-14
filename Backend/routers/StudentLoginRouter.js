@@ -7,8 +7,8 @@ const {
 } = require("../controllers/StudentLoginController");
 const { protectStudent } = require("../middlewares/authMiddleware");
 
-router.post("/register", registerStudent);
+router.post("/studentregister", registerStudent);
 router.post("/studentlogin", loginStudent);
-router.post("/change-studentpassword", protectStudent, changeStudentPassword);
+router.put("/change-studentpassword", protectStudent, changeStudentPassword);
 
 module.exports = router;
