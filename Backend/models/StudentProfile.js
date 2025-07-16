@@ -19,6 +19,10 @@ const UserProfileSchema = new mongoose.Schema({
     type: String, 
     required: true 
   },
+  technology: {
+    type: String,
+    required: true
+  },
   college: { 
     type: String, 
     required: true 

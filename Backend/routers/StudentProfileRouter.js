@@ -8,7 +8,7 @@ const {
 } = require("../controllers/StudentProfileController");
 
 router.post("/student/profile", protectStudent, upsertProfile);
-router.get("/student/getprofile", protectStudent, getProfile);
+router.get("/student/getprofile", getProfile);
 router.get("/student/matchprofile", protectStudent, matchProfile);
 
 module.exports = router; 

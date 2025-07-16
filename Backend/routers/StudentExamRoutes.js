@@ -14,7 +14,7 @@ const {
 const upload = require("../middlewares/Upload");
 
 router.post("/assign", protectAdmin, assignExamToStudent);
-router.get("/student", protectStudent, getStudentExams);
+router.get("/student", getStudentExams);
 router.post("/status", protectStudent, setStatus);
 
 router.post("/student/complete", protectStudent, upload.array("violationImage", 5), updateExamStatus);

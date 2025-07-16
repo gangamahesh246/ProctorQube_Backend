@@ -60,12 +60,12 @@ const getProfile = async (req, res) => {
 
 const matchProfile = async (req, res) => {
   try {
-    const { userId } = req.query;
+    const { email } = req.query;
 
     const match = await UserProfile.aggregate([
       {
         $match: {
-          userId: userId,
+          email: email,
         },
       },
       {

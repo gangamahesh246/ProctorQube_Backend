@@ -9,112 +9,96 @@ const GetStudents = async (req, res) => {
   }
 };
 
-const deleteBranch = async (req, res) => {
-  try {
-    const { branch, section } = req.body;
+const deleteTechnology = async (req, res) => {
+  try {
+    const { technology } = req.body;
 
-    if (!branch) {
-      return res.status(400).json({ message: "Branch is required" });
-    }
+    if (!technology) {
+      return res.status(400).json({ message: "Technology is required" });
+    }
 
-    if (!section) {
-      const existing = await Students.findOne({ branch });
+    const existing = await Students.findOne({ technology });
 
-      if (!existing) {
-        return res.status(404).json({ message: "Branch not found" });
-      }
+    if (!existing) {
+      return res.status(404).json({ message: "Technology not found" });
+    }
 
-      await Students.deleteMany({ branch });
-      return res
-        .status(200)
-        .json({ message: `Branch '${branch}' deleted successfully` });
-    }
+    await Students.deleteMany({ technology });
 
-    const sectionExists = await Students.findOne({ branch, section });
-
-    if (!sectionExists) {
-      return res
-        .status(404)
-        .json({ message: "Section not found in given branch" });
-    }
-
-    await Students.deleteMany({ branch, section });
-    return res.status(200).json({
-      message: `Section '${section}' in branch '${branch}' deleted successfully`,
-    });
-  } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message });
-  }
+    return res
+      .status(200)
+      .json({ message: `Technology '${technology}' deleted successfully` });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
 };
 
 const PostSingleStudent = async (req, res) => {
-  const { branch, section, student_mail } = req.body;
+  const { technology, student_mail } = req.body;
 
-  if (!branch || !section || !student_mail) {
-    return res.status(400).json({ message: "All fields are required" });
-  }
+  if (!technology || !student_mail) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
 
-  const exists = await Students.findOne({ branch, section, student_mail });
+  const exists = await Students.findOne({ technology, student_mail });
 
-  if (exists) {
-    return res.status(200).json({ message: "Student already exists" });
-  }
+  if (exists) {
+    return res.status(200).json({ message: "Student already exists" });
+  }
 
-  const student = new Students({ branch, section, student_mail });
-  await student.save();
+  const student = new Students({ technology, student_mail });
+  await student.save();
 
-  res.status(201).json({ message: "Student added", data: student });
+  res.status(201).json({ message: "Student added", data: student });
 };
 
 const PostOrUpdateStudents = async (req, res) => {
-  try {
-    const { branch, section, students } = req.body;
+  try {
+    const { technology, students } = req.body;
 
-    if (!branch || !section || !Array.isArray(students)) {
-      return res.status(400).json({ message: "Invalid input format" });
-    }
+    if (!technology || !Array.isArray(students)) {
+      return res.status(400).json({ message: "Invalid input format" });
+    }
 
-    const formattedStudents = students.map((email) => ({
-      student_mail: email,
-      branch,
-      section,
-    }));
+    const formattedStudents = students.map((email) => ({
+      student_mail: email,
+      technology,
+    }));
 
-    const existingStudents = await Students.find({
-      branch,
-      section,
-      student_mail: { $in: students },
-    });
+    const existingStudents = await Students.find({
+      technology,
+      student_mail: { $in: students },
+    });
 
-    const existingEmails = new Set(existingStudents.map((s) => s.student_mail));
+    const existingEmails = new Set(existingStudents.map((s) => s.student_mail));
 
-    const newStudents = formattedStudents.filter(
-      (s) => !existingEmails.has(s.student_mail)
-    );
+    const newStudents = formattedStudents.filter(
+      (s) => !existingEmails.has(s.student_mail)
+    );
 
-    if (newStudents.length === 0) {
-      return res
-        .status(200)
-        .json({ message: "No new students to add. All already exist." });
-    }
+    if (newStudents.length === 0) {
+      return res
+        .status(200)
+        .json({ message: "No new students to add. All already exist." });
+    }
 
-    const inserted = await Students.insertMany(newStudents);
+    const inserted = await Students.insertMany(newStudents);
 
-    res.status(201).json({
-      message: "Students added successfully",
-      added: inserted.length,
-      skipped: existingEmails.size,
-      data: inserted,
-    });
-  } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message });
-  }
+    res.status(201).json({
+      message: "Students added successfully",
+      added: inserted.length,
+      skipped: existingEmails.size,
+      data: inserted,
+    });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
 };
 
 const deleteStudentById = async (req, res) => {
@@ -158,7 +142,7 @@ const GetStudentId = async (req, res) => {
 
 module.exports = {
   GetStudents,
-  deleteBranch,
+  deleteTechnology,
   PostOrUpdateStudents,
   PostSingleStudent,
   deleteStudentById,
