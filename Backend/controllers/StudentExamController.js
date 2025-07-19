@@ -210,9 +210,223 @@ const setStatus = async (req, res) => {
   }
 };
 
+const getStudentExamStats = async (req, res) => {
+  const { student_id } = req.query;
+
+  if (
+    !student_id ||
+    typeof student_id !== "string" ||
+    !mongoose.Types.ObjectId.isValid(student_id)
+  ) {
+    return res.status(400).json({ message: "Invalid student ID format" });
+  }
+
+  try {
+    const data = await StudentExam.findOne({
+      student_id: new mongoose.Types.ObjectId(student_id),
+    });
+
+    if (!data || !Array.isArray(data.exams)) {
+      return res.json({ examStats: {} });
+    }
+
+    const examsData = data.exams;
+
+    const scores = [];
+    const allAttempts = [];
+    let passed = 0;
+    let failed = 0;
+
+    const now = new Date();
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(now.getDate() - 7);
+    const twoWeeksAgo = new Date();
+    twoWeeksAgo.setDate(now.getDate() - 14);
+
+    let currentWeekExams = 0;
+    let previousWeekExams = 0;
+    let currentWeekScores = [];
+    let previousWeekScores = [];
+
+    let totalFlags = 0;
+
+    examsData.forEach((exam) => {
+      const attempts = exam.attempts || [];
+      allAttempts.push(...attempts);
+
+      attempts.forEach((a) => {
+        if (a?.attemptStart) {
+          const attemptTime = new Date(a.attemptStart);
+          if (attemptTime >= oneWeekAgo && attemptTime < now) {
+            currentWeekExams++;
+            if (typeof a?.score === "number") currentWeekScores.push(a.score);
+          } else if (attemptTime >= twoWeeksAgo && attemptTime < oneWeekAgo) {
+            previousWeekExams++;
+            if (typeof a?.score === "number") previousWeekScores.push(a.score);
+          }
+        }
+
+        if (a?.result === "pass") passed++;
+        if (a?.result === "fail") failed++;
+
+        if (typeof a?.score === "number") scores.push(a.score);
+
+        const v = a?.stats?.violations;
+        if (v) {
+          totalFlags +=
+            (v.tabSwitchingViolation || 0) +
+            (v.webcamViolation || 0) +
+            (v.soundViolation || 0) +
+            (v.devtoolsViolation || 0) +
+            (v.rightClickViolation || 0) +
+            (v.fullscreenViolation || 0);
+        }
+      });
+    });
+
+    const averageMarks = scores.length
+      ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2)
+      : 0;
+
+    const highestMarks = scores.length ? Math.max(...scores) : 0;
+    const lowestMarks = scores.length ? Math.min(...scores) : 0;
+
+    const recentAttempts = allAttempts
+      .filter((a) => a?.attemptStart)
+      .sort((a, b) => new Date(b.attemptStart) - new Date(a.attemptStart))
+      .slice(0, 5);
+
+    const recentScores = recentAttempts
+      .map((a) => a.score)
+      .filter((s) => typeof s === "number");
+
+    const recentAccuracy = recentScores.length
+      ? (recentScores.reduce((a, b) => a + b, 0) / recentScores.length).toFixed(
+          2
+        )
+      : 0;
+
+    const totalExams = examsData.length;
+    const passPercentage =
+      totalExams === 0 ? 0 : ((passed / totalExams) * 100).toFixed(2);
+
+    const performanceTrend = examsData.map((exam) => {
+      const latestAttempt = [...(exam.attempts || [])]
+        .filter((a) => typeof a.score === "number")
+        .sort((a, b) => new Date(b.attemptStart) - new Date(a.attemptStart))[0];
+
+      return {
+        label: latestAttempt?.stats?.title ?? "Unknown",
+        value: latestAttempt?.score ?? 0,
+        date: latestAttempt?.attemptStart
+          ? new Date(latestAttempt.attemptStart).toISOString().slice(0, 10)
+          : null,
+      };
+    });
+
+    const scoreDistribution = {
+      "0–40": 0,
+      "41–60": 0,
+      "61–80": 0,
+      "81–100": 0,
+    };
+
+    examsData.forEach((exam) => {
+      const latestAttempt = [...(exam.attempts || [])]
+        .filter((a) => typeof a.score === "number")
+        .sort((a, b) => new Date(b.attemptStart) - new Date(a.attemptStart))[0];
+
+      const score = latestAttempt?.score ?? 0;
+
+      if (score <= 40) scoreDistribution["0–40"]++;
+      else if (score <= 60) scoreDistribution["41–60"]++;
+      else if (score <= 80) scoreDistribution["61–80"]++;
+      else scoreDistribution["81–100"]++;
+    });
+
+    const violationSummary = {
+      tabSwitch: 0,
+      cameraOff: 0,
+      audioIssues: 0,
+    };
+
+    examsData.forEach((exam) => {
+      exam.attempts?.forEach((attempt) => {
+        const v = attempt?.stats?.violations;
+        if (v) {
+          violationSummary.tabSwitch += v.tabSwitchingViolation || 0;
+          violationSummary.cameraOff += v.webcamViolation || 0;
+          violationSummary.audioIssues += v.soundViolation || 0;
+        }
+      });
+    });
+
+    const upcomingExams = examsData
+      .filter((exam) => {
+        const upcomingAttempt = exam.attempts?.[0]?.stats?.startTime;
+        return upcomingAttempt && new Date(upcomingAttempt) > new Date();
+      })
+      .map((exam) => ({
+        title: exam.attempts.map((a) => a.stats.title) || "Upcoming Exam",
+        startTime: exam.attempts[0].stats.startTime,
+      }));
+
+    const examStats = {
+      totalExams,
+      examsPassed: passed,
+      examsFailed: failed,
+      averageMarks,
+      passPercentage,
+      highestMarks,
+      lowestMarks,
+      recentAccuracy,
+    };
+
+    const trends = {
+      examsCompleted: {
+        value: currentWeekExams - previousWeekExams,
+        isPositive: currentWeekExams >= previousWeekExams,
+      },
+      averageScore: {
+        value:
+          currentWeekScores.length && previousWeekScores.length
+            ? (
+                currentWeekScores.reduce((a, b) => a + b, 0) /
+                  currentWeekScores.length -
+                previousWeekScores.reduce((a, b) => a + b, 0) /
+                  previousWeekScores.length
+              ).toFixed(2)
+            : 0,
+        isPositive:
+          currentWeekScores.reduce((a, b) => a + b, 0) /
+            (currentWeekScores.length || 1) >=
+          previousWeekScores.reduce((a, b) => a + b, 0) /
+            (previousWeekScores.length || 1),
+      },
+      totalFlags: {
+        value: totalFlags,
+        isPositive: false,
+      },
+    };
+
+    return res.json({
+      examStats,
+      trends,
+      performanceTrend,
+      violationSummary,
+      upcomingExams,
+      scoreDistribution,
+    });
+  } catch (err) {
+    console.error("Error fetching student exam stats:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   assignExamToStudent,
   getStudentExams,
   updateExamStatus,
   setStatus,
+  getStudentExamStats,
 };

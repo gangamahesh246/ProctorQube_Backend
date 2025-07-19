@@ -44,7 +44,7 @@ const examEntrySchema = new mongoose.Schema({
   timeTaken: { type: Number },
   assignedBy: { type: String },
   assignedAt: { type: Date, default: Date.now },
-  
+
   attempts: [attemptSchema],
 });
 

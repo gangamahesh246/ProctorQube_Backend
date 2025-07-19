@@ -3,12 +3,13 @@ const bcrypt = require("bcryptjs");
 
 const upsertProfile = async (req, res) => {
   try {
-    const { email, skills, ...rest } = req.body;
+    const { email, skills, achievements, ...rest } = req.body;
 
     const updates = {
       ...rest,
       email,
       skills: typeof skills === "string" ? JSON.parse(skills) : skills,
+      achievements: typeof achievements === "string" ? JSON.parse(achievements) : achievements,
     };
 
     const existingProfile = await UserProfile.findOne({ email });

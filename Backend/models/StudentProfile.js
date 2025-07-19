@@ -44,7 +44,9 @@ const UserProfileSchema = new mongoose.Schema({
   skills: [{ 
     type: String 
   }],
-
+  achievements: [{ 
+    type: String 
+  }],
   dateOfBirth: { 
     type: Date 
   },

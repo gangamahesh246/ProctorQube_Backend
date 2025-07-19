@@ -5,6 +5,7 @@ const {
   getStudentExams,
   updateExamStatus,
   setStatus,
+  getStudentExamStats,
 } = require("../controllers/StudentExamController");
 
 const {
@@ -15,6 +16,7 @@ const upload = require("../middlewares/Upload");
 
 router.post("/assign", protectAdmin, assignExamToStudent);
 router.get("/student", getStudentExams);
+router.get("/studentprofilestats", getStudentExamStats);
 router.post("/status", protectStudent, setStatus);
 
 router.post("/student/complete", protectStudent, upload.array("violationImage", 5), updateExamStatus);
