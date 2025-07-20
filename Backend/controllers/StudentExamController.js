@@ -1,4 +1,5 @@
 const StudentExam = require("../models/StudentExam");
+const Exam = require("../models/ExamModel");
 const mongoose = require("mongoose");
 
 const assignExamToStudent = async (req, res) => {
@@ -307,41 +308,52 @@ const getStudentExamStats = async (req, res) => {
       : 0;
 
     const totalExams = examsData.length;
+    const attemptedExams = allAttempts.length;
+
     const passPercentage =
       totalExams === 0 ? 0 : ((passed / totalExams) * 100).toFixed(2);
 
-    const performanceTrend = examsData.map((exam) => {
-      const latestAttempt = [...(exam.attempts || [])]
-        .filter((a) => typeof a.score === "number")
-        .sort((a, b) => new Date(b.attemptStart) - new Date(a.attemptStart))[0];
+    const performanceTrend = examsData
+      .filter((exam) =>
+        (exam.attempts || []).some((a) => typeof a.score === "number")
+      )
+      .map((exam) => {
+        const latestAttempt = [...(exam.attempts || [])]
+          .filter((a) => typeof a.score === "number")
+          .sort(
+            (a, b) => new Date(b.attemptStart) - new Date(a.attemptStart)
+          )[0];
 
-      return {
-        label: latestAttempt?.stats?.title ?? "Unknown",
-        value: latestAttempt?.score ?? 0,
-        date: latestAttempt?.attemptStart
-          ? new Date(latestAttempt.attemptStart).toISOString().slice(0, 10)
-          : null,
-      };
+        return {
+          label: latestAttempt?.stats?.title ?? "Unknown",
+          value: latestAttempt?.score ?? 0,
+          date: latestAttempt?.attemptStart
+            ? new Date(latestAttempt.attemptStart).toISOString().slice(0, 10)
+            : null,
+        };
+      });
+
+    const sortedExams = [...examsData].sort((a, b) => {
+      const aTime = new Date(a.attempts?.at(-1)?.attemptStart || 0);
+      const bTime = new Date(b.attempts?.at(-1)?.attemptStart || 0);
+      return bTime - aTime;
     });
 
-    const scoreDistribution = {
-      "0–40": 0,
-      "41–60": 0,
-      "61–80": 0,
-      "81–100": 0,
-    };
+    const recentExams = sortedExams.slice(0, 5);
 
-    examsData.forEach((exam) => {
+    const scoreDistribution = [];
+
+    recentExams.forEach((exam) => {
       const latestAttempt = [...(exam.attempts || [])]
         .filter((a) => typeof a.score === "number")
         .sort((a, b) => new Date(b.attemptStart) - new Date(a.attemptStart))[0];
 
-      const score = latestAttempt?.score ?? 0;
-
-      if (score <= 40) scoreDistribution["0–40"]++;
-      else if (score <= 60) scoreDistribution["41–60"]++;
-      else if (score <= 80) scoreDistribution["61–80"]++;
-      else scoreDistribution["81–100"]++;
+      if (latestAttempt) {
+        scoreDistribution.push({
+          label: latestAttempt?.stats?.title ?? "Unknown",
+          value: latestAttempt.score,
+        });
+      }
     });
 
     const violationSummary = {
@@ -361,18 +373,101 @@ const getStudentExamStats = async (req, res) => {
       });
     });
 
-    const upcomingExams = examsData
-      .filter((exam) => {
-        const upcomingAttempt = exam.attempts?.[0]?.stats?.startTime;
-        return upcomingAttempt && new Date(upcomingAttempt) > new Date();
-      })
-      .map((exam) => ({
-        title: exam.attempts.map((a) => a.stats.title) || "Upcoming Exam",
-        startTime: exam.attempts[0].stats.startTime,
-      }));
+    const violationDistribution = [
+      { label: "Tab Switch", value: violationSummary.tabSwitch },
+      { label: "Camera Off", value: violationSummary.cameraOff },
+      { label: "Audio Issues", value: violationSummary.audioIssues },
+    ];
+
+    const timeVsDuration = [];
+
+    recentExams.forEach((exam) => {
+      const lastAttempt = exam.attempts?.at(-1);
+      const duration = lastAttempt?.stats?.duration;
+      const title = lastAttempt?.stats?.title ?? "Untitled Exam";
+      const timeTaken = exam.timeTaken ?? 0;
+
+      if (duration && timeTaken) {
+        timeVsDuration.push({
+          label: title,
+          value: Math.round((timeTaken / duration) * 100),
+        });
+      }
+    });
+
+    const completedExams = [];
+
+    recentExams.forEach((exam) => {
+      const lastAttempt = exam.attempts?.at(-1);
+      const examTitle = lastAttempt?.stats?.title ?? "Untitled Exam";
+      const faculty = exam.assignedBy;
+      const date = exam.assignedAt
+        ? new Date(exam.assignedAt).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        : "";
+
+      const time = exam.activeTime ?? "";
+      const score = lastAttempt?.score ?? 0;
+      const status = lastAttempt?.result ?? "Not Attempted";
+
+      completedExams.push({
+        examTitle,
+        faculty,
+        date,
+        time,
+        score,
+        status,
+      });
+    });
+
+    const formatTo12Hour = (time24) => {
+      if (!time24) return "N/A";
+      const [hour, minute] = time24.split(":");
+      const h = parseInt(hour, 10);
+      const suffix = h >= 12 ? "PM" : "AM";
+      const hour12 = h % 12 === 0 ? 12 : h % 12;
+      return `${hour12.toString().padStart(2, "0")}:${minute} ${suffix}`;
+    };
+
+    const examIds = examsData.map((exam) => exam.examId).filter(Boolean);
+
+    const fetchedExams = await Exam.find({ _id: { $in: examIds } });
+
+    const upcomingExams = fetchedExams
+      .filter(
+        (exam) =>
+          new Date(exam.settings?.availability?.timeLimitDays?.from) >
+          new Date()
+      )
+      .map((exam) => {
+        const assigned = examsData.find(
+          (ex) => ex.examId?.toString() === exam._id?.toString()
+        );
+
+        return {
+          examTitle: exam.basicInfo?.title || "Upcoming Exam",
+          date: exam.settings?.availability?.timeLimitDays?.from
+            ? new Date(
+                exam.settings?.availability?.timeLimitDays?.from
+              ).toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })
+            : "",
+          time: formatTo12Hour(exam.settings?.availability?.timeLimitHours?.from),
+          hoursUntil: exam.settings?.answerTimeControl?.examTime / 60,
+          faculty: assigned?.assignedBy || "Unknown",
+          duration: exam.settings?.answerTimeControl?.examTime / 60 || 0,
+        };
+      });
 
     const examStats = {
       totalExams,
+      attemptedExams,
       examsPassed: passed,
       examsFailed: failed,
       averageMarks,
@@ -413,9 +508,11 @@ const getStudentExamStats = async (req, res) => {
       examStats,
       trends,
       performanceTrend,
-      violationSummary,
+      violationDistribution,
       upcomingExams,
       scoreDistribution,
+      timeVsDuration,
+      completedExams,
     });
   } catch (err) {
     console.error("Error fetching student exam stats:", err);
