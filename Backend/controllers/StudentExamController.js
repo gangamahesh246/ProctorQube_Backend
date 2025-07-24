@@ -311,7 +311,7 @@ const getStudentExamStats = async (req, res) => {
     const attemptedExams = allAttempts.length;
 
     const passPercentage =
-      totalExams === 0 ? 0 : ((passed / totalExams) * 100).toFixed(2);
+      totalExams === 0 ? 0 : ((passed / allAttempts.length) * 100).toFixed(2);
 
     const performanceTrend = examsData
       .filter((exam) =>
@@ -398,7 +398,12 @@ const getStudentExamStats = async (req, res) => {
     const completedExams = [];
 
     recentExams.forEach((exam) => {
-      const lastAttempt = exam.attempts?.at(-1);
+      const lastAttempt = [...(exam.attempts || [])]
+        .filter((a) => typeof a.score === "number")
+        .sort((a, b) => new Date(b.attemptStart) - new Date(a.attemptStart))[0];
+
+      if (!lastAttempt) return;
+
       const examTitle = lastAttempt?.stats?.title ?? "Untitled Exam";
       const faculty = exam.assignedBy;
       const date = exam.assignedAt
@@ -408,10 +413,15 @@ const getStudentExamStats = async (req, res) => {
             year: "numeric",
           })
         : "";
-
+      const proctorAlerts = lastAttempt?.stats?.violations
+        ? Object.values(lastAttempt.stats.violations).reduce(
+            (sum, val) => sum + (val || 0),
+            0
+          )
+        : 0;
       const time = exam.activeTime ?? "";
-      const score = lastAttempt?.score ?? 0;
-      const status = lastAttempt?.result ?? "Not Attempted";
+      const score = lastAttempt.score;
+      const status = lastAttempt.result ?? "Not Attempted";
 
       completedExams.push({
         examTitle,
@@ -420,6 +430,42 @@ const getStudentExamStats = async (req, res) => {
         time,
         score,
         status,
+        proctorAlerts,
+      });
+    });
+
+    const examsHistory = [];
+
+    examsData.forEach((exam) => {
+      const lastAttempt = [...(exam.attempts || [])]
+        .filter((a) => typeof a.score === "number")
+        .sort((a, b) => new Date(b.attemptStart) - new Date(a.attemptStart))[0];
+
+      if (!lastAttempt) return;
+
+      const examName = lastAttempt?.stats?.title ?? "Untitled Exam";
+      const date = exam.assignedAt
+        ? new Date(exam.assignedAt).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        : "";
+      const proctorAlerts = lastAttempt?.stats?.violations
+        ? Object.values(lastAttempt.stats.violations).reduce(
+            (sum, val) => sum + (val || 0),
+            0
+          )
+        : 0;
+      const score = lastAttempt.score;
+      const status = lastAttempt.result ?? "Not Attempted";
+
+      examsHistory.push({
+        examName,
+        date,
+        score,
+        status,
+        proctorAlerts,
       });
     });
 
@@ -458,7 +504,9 @@ const getStudentExamStats = async (req, res) => {
                 year: "numeric",
               })
             : "",
-          time: formatTo12Hour(exam.settings?.availability?.timeLimitHours?.from),
+          time: formatTo12Hour(
+            exam.settings?.availability?.timeLimitHours?.from
+          ),
           hoursUntil: exam.settings?.answerTimeControl?.examTime / 60,
           faculty: assigned?.assignedBy || "Unknown",
           duration: exam.settings?.answerTimeControl?.examTime / 60 || 0,
@@ -513,6 +561,7 @@ const getStudentExamStats = async (req, res) => {
       scoreDistribution,
       timeVsDuration,
       completedExams,
+      examsHistory,
     });
   } catch (err) {
     console.error("Error fetching student exam stats:", err);
@@ -520,10 +569,110 @@ const getStudentExamStats = async (req, res) => {
   }
 };
 
+const GetAttempts = async (req, res) => {
+  let { student_id, examId } = req.query;
+
+  if (!Array.isArray(student_id)) {
+    student_id = [student_id];
+  }
+
+  if (!examId || typeof examId !== "string") {
+    return res.status(400).json({ message: "Missing or invalid examId" });
+  }
+
+  const validIds = student_id.filter((id) =>
+    mongoose.Types.ObjectId.isValid(id)
+  );
+
+  if (validIds.length === 0) {
+    return res.status(400).json({ message: "No valid student IDs provided" });
+  }
+
+  try {
+    const data = await StudentExam.find({
+      student_id: { $in: validIds.map((id) => new mongoose.Types.ObjectId(id)) },
+    });
+
+    const results = validIds.map((id) => {
+      const studentData = data.find((doc) =>
+        doc.student_id.toString() === id
+      );
+
+      if (studentData) {
+        const matchedExam = studentData.exams.find(
+          (exam) => exam.examId.toString() === examId
+        );
+
+        if (matchedExam && matchedExam.attempts?.length > 0) {
+          return {
+            student_id: id,
+            lastAttemptStats: matchedExam.attempts.at(-1).stats || null,
+          };
+        }
+
+        return {
+          student_id: id,
+          lastAttemptStats: null,
+        };
+      } else {
+        return {
+          student_id: id,
+          lastAttemptStats: null,
+        };
+      }
+    });
+
+    return res.status(200).json(results);
+  } catch (err) {
+    console.error("Error fetching attempts:", err);
+    return res
+      .status(500)
+      .json({ message: "Server error", error: err.message });
+  }
+};
+
+const Ranking = async (req, res) => {
+  const updates = req.body;
+
+  if (!Array.isArray(updates)) {
+    return res.status(400).json({ message: "Invalid input format" });
+  }
+
+  const bulkOps = updates.map(({ student_id, exam_id, rank }) => ({
+  updateOne: {
+    filter: {
+      student_id: new mongoose.Types.ObjectId(student_id),
+      "exams.examId":new mongoose.Types.ObjectId(exam_id),
+    },
+    update: {
+      $set: {
+        "exams.$[exam].ranking": rank,
+      },
+    },
+    arrayFilters: [
+      { "exam.examId": new mongoose.Types.ObjectId(exam_id) }
+    ],
+  },
+}));
+
+  try {
+    const result = await StudentExam.bulkWrite(bulkOps, { ordered: false });
+    return res.status(200).json({ message: "Ranks updated", result });
+  } catch (error) {
+    console.error("Error updating ranks:", error);
+    return res.status(500).json({ message: "Error updating ranks", error });
+  }
+};
+
+
+
+
 module.exports = {
   assignExamToStudent,
   getStudentExams,
   updateExamStatus,
   setStatus,
   getStudentExamStats,
+  GetAttempts,
+  Ranking,
 };

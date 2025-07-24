@@ -20,7 +20,6 @@ const getStudentExams = require("./routers/StudentExamRoutes");
 const Student = require("./models/studentsModel");
 const StudentExam = require("./models/StudentExam");
 const interviewQuestion = require("./routers/interviewQuestionRoutes")
-const studentDashboardRoutes = require('./routers/studentDashboardRoutes');
 const practiceTestRoutes = require('./routers/practiceTestRoutes');
 const imageProxy = require('./routers/BaseRouter');
 
@@ -55,7 +54,6 @@ app.use("/", adminRoutes);
 app.use("/", studentRoutes);
 app.use("/", getStudentExams);
 app.use("/", interviewQuestion);
-app.use("/", studentDashboardRoutes);
 app.use("/", practiceTestRoutes);
 
 app.use("/api", imageProxy);
@@ -88,6 +86,7 @@ io.on("connection", (socket) => {
           const socketId = onlineStudents.get(email);
           if (socketId) {
             socket.to(socketId).emit("examAssigned", examData, assignedBy);
+            console.log(examData);
             console.log(`Sent exam assignment to ${email}`);
           } else {
             console.log(`Student ${email} is not online.`);

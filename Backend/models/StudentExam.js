@@ -12,6 +12,7 @@ const examStatsSchema = new mongoose.Schema(
     score: { type: Number, default: null },
     attemptStart: { type: Date },
     attemptEnd: { type: Date },
+    student_mail: { type: String },
     violations: {
       tabSwitchingViolation: { type: Number, default: 0 },
       devtoolsViolation: { type: Number, default: 0 },
