@@ -1,51 +1,66 @@
 const InterviewQuestion = require('../models/InterviewQuestion');
-const XLSX = require('xlsx');
 
-// Add new interview question (single)
-const addInterviewQuestion = async (req, res) => {
-  const { question, answer } = req.body;
+const getInterviewQuestionsByTechnology = async (req, res) => {
   try {
-    const newQuestion = new InterviewQuestion({ question, answer });
-    await newQuestion.save();
-    res.status(201).json({ message: 'Interview question added' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+    const { technology } = req.query;
 
-// Get all questions
-const getAllInterviewQuestions = async (req, res) => {
-  try {
-    const questions = await InterviewQuestion.find();
+    if (!technology) {
+      return res.status(400).json({ error: "Technology is required" });
+    }
+
+    const questions = await InterviewQuestion.find({ technology });
+
     res.json(questions);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// ✅ Bulk upload from Excel
-const bulkUploadQuestions = async (req, res) => {
+const PostOrUpdateInterviewQuestions = async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+    const { technology, questions } = req.body;
 
-    const workbook = XLSX.readFile(req.file.path);
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet);
+    if (!technology || !Array.isArray(questions)) {
+      return res.status(400).json({ message: "Invalid input format" });
+    }
 
-    const bulkData = rows.map(row => ({
-      question: row.question,
-      answer: row.answer
+    const formattedQuestions = questions.map((q) => ({
+      question: q.question,
+      answer: q.answer,
+      explanation: q.explanation || "",
     }));
 
-    await InterviewQuestion.insertMany(bulkData);
-    res.status(200).json({ message: "Bulk questions uploaded successfully" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const existing = await InterviewQuestion.findOne({ technology });
+
+    if (existing) {
+      existing.questions = [...existing.questions, ...formattedQuestions];
+      await existing.save();
+      return res.status(200).json({
+        message: "Interview questions added successfully",
+        data: existing,
+      });
+    }
+
+    const data = new InterviewQuestion({
+      technology,
+      questions: formattedQuestions,
+    });
+
+    await data.save();
+    res.status(201).json({
+      message: "Interview questions uploaded successfully",
+      data,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
 
 module.exports = {
-  addInterviewQuestion,
-  getAllInterviewQuestions,
-  bulkUploadQuestions
+  getInterviewQuestionsByTechnology,
+  PostOrUpdateInterviewQuestions
 };

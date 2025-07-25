@@ -117,7 +117,6 @@ const updateExamStatus = async (req, res) => {
       return res.status(403).json({ message: "Max attempts exceeded" });
     }
 
-    console.log(req.files);
     let violationPhotos = [];
     if (req.files && req.files.length > 0) {
       violationPhotos = req.files.map(

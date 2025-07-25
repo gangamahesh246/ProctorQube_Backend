@@ -59,6 +59,27 @@ const getProfile = async (req, res) => {
   }
 };
 
+const getTechnology = async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await UserProfile.findOne({ email }).select("technology");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ technology: user.technology });
+  } catch (error) {
+    console.error("Error in getTechnology:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const matchProfile = async (req, res) => {
   try {
     const { email } = req.query;
@@ -93,4 +114,5 @@ module.exports = {
   upsertProfile,
   getProfile,
   matchProfile,
+  getTechnology
 };
