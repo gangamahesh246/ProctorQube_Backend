@@ -1,97 +1,66 @@
-const PracticeTest = require('../models/PracticeTestFull');
+const PracticeTests = require('../models/PracticeTests');
 
-// Create a new practice test
-const createPracticeTest = async (req, res) => {
-  const { title, duration, questions } = req.body;
+const getPracticeQuestionsByTechnology = async (req, res) => {
   try {
-    const newTest = new PracticeTest({ title, duration, questions });
-    await newTest.save();
-    res.status(201).json({ message: 'Practice test created', test: newTest });
+    const { technology } = req.query;
+
+    if (!technology) {
+      return res.status(400).json({ error: "Technology is required" });
+    }
+
+    const questions = await PracticeTests.find({ technology });
+
+    res.json(questions);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// Get all tests
-const getAllPracticeTests = async (req, res) => {
+const postOrUpdatePracticeQuestions = async (req, res) => {
   try {
-    const tests = await PracticeTest.find().select('title duration createdAt');
-    res.json(tests);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+    const { technology, questions } = req.body;
 
-// Get test by ID with questions
-const getPracticeTestById = async (req, res) => {
-  try {
-    const test = await PracticeTest.findById(req.params.id);
-    if (!test) return res.status(404).json({ error: 'Test not found' });
-    res.json(test);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+    if (!technology || !Array.isArray(questions)) {
+      return res.status(400).json({ message: "Invalid input format" });
+    }
 
-// Submit answers
-const submitPracticeTest = async (req, res) => {
-  const { studentId, answers, startedAt, endedAt } = req.body;
-  const testId = req.params.id;
+    const formattedQuestions = questions.map((q) => ({
+      question: q.question,
+      options: q.options,
+      correctAnswer: q.correctAnswer
+    }));
 
-  try {
-    const test = await PracticeTest.findById(testId);
-    if (!test) return res.status(404).json({ error: 'Test not found' });
+    const existing = await PracticeTests.findOne({ technology });
 
-    let score = 0;
-    const evaluatedAnswers = test.questions.map((q, i) => {
-      const userAnswer = answers.find(a => a.question === q.question);
-      const isCorrect = userAnswer?.selectedAnswer === q.correctAnswer;
-      if (isCorrect) score++;
-      return {
-        question: q.question,
-        selectedAnswer: userAnswer?.selectedAnswer || '',
-        correctAnswer: q.correctAnswer,
-        isCorrect
-      };
+    if (existing) {
+      existing.questions = [...existing.questions, ...formattedQuestions];
+      await existing.save();
+      return res.status(200).json({
+        message: "Practice questions updated successfully",
+        data: existing
+      });
+    }
+
+    const data = new PracticeTests({
+      technology,
+      questions: formattedQuestions
     });
 
-    const result = {
-      studentId,
-      answers: evaluatedAnswers,
-      score,
-      startedAt,
-      endedAt
-    };
-
-    test.results.push(result);
-    await test.save();
-
-    res.status(200).json({ message: 'Test submitted', score });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// Get a student's results
-const getStudentResults = async (req, res) => {
-  try {
-    const test = await PracticeTest.findById(req.params.id);
-    if (!test) return res.status(404).json({ error: 'Test not found' });
-
-    const studentResults = test.results.filter(
-      r => r.studentId.toString() === req.params.studentId
-    );
-
-    res.json(studentResults);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    await data.save();
+    res.status(201).json({
+      message: "Practice questions uploaded successfully",
+      data
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Internal server error",
+      error: error.message
+    });
   }
 };
 
 module.exports = {
-  createPracticeTest,
-  getAllPracticeTests,
-  getPracticeTestById,
-  submitPracticeTest,
-  getStudentResults
+  getPracticeQuestionsByTechnology,
+  postOrUpdatePracticeQuestions
 };
