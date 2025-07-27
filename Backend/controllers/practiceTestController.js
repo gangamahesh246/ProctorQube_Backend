@@ -8,7 +8,9 @@ const getPracticeQuestionsByTechnology = async (req, res) => {
       return res.status(400).json({ error: "Technology is required" });
     }
 
-    const questions = await PracticeTests.find({ technology });
+    const questions = await PracticeTests.find({ 
+      technology: { $regex: `^${technology}$`, $options: 'i' }
+     });
 
     res.json(questions);
   } catch (err) {
@@ -30,7 +32,9 @@ const postOrUpdatePracticeQuestions = async (req, res) => {
       correctAnswer: q.correctAnswer
     }));
 
-    const existing = await PracticeTests.findOne({ technology });
+    const existing = await PracticeTests.findOne({ 
+      technology: { $regex: `^${technology}$`, $options: 'i' }
+     });
 
     if (existing) {
       existing.questions = [...existing.questions, ...formattedQuestions];
