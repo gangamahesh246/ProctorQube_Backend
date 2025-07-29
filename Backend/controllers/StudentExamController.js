@@ -24,7 +24,7 @@ const assignExamToStudent = async (req, res) => {
       await studentExam.save();
     }
 
-    res.status(200).json({ message: "Exam assigned successfully." });
+    res.status(200).json({ message: "Exam assigned successfully.", examData: newExam });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to assign exam." });
@@ -78,6 +78,7 @@ const updateExamStatus = async (req, res) => {
       timeTaken,
       duration,
       startTime,
+      student_mail,
       endTime,
       violations = {},
     } = attemptData;
@@ -136,6 +137,7 @@ const updateExamStatus = async (req, res) => {
       endTime: new Date(endTime),
       duration,
       score,
+      student_mail,
       attemptStart: new Date(attemptStart),
       attemptEnd: new Date(attemptEnd),
       timeTaken,
@@ -662,9 +664,6 @@ const Ranking = async (req, res) => {
     return res.status(500).json({ message: "Error updating ranks", error });
   }
 };
-
-
-
 
 module.exports = {
   assignExamToStudent,

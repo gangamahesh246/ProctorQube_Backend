@@ -7,6 +7,7 @@ const cors = require("cors");
 const cron = require("node-cron");
 const connectDB = require("./config/database");
 connectDB();
+const mongoose = require("mongoose");
 const deleteOldViolationImages = require("./utils/cleanupViolations");
 const exam = require("./routers/ExamRouter");
 const question = require("./routers/questionRoute");
@@ -89,7 +90,6 @@ io.on("connection", (socket) => {
           const socketId = onlineStudents.get(email);
           if (socketId) {
             socket.to(socketId).emit("examAssigned", examData, assignedBy);
-            console.log(`Sent exam assignment to ${email}`);
           } else {
             console.log(`Student ${email} is not online.`);
           }
@@ -104,14 +104,13 @@ io.on("connection", (socket) => {
               exams: [],
             });
           }
-
+          const validExamId = new mongoose.Types.ObjectId(examData._id);
           studentExam.exams.push({
-            examId: examData._id,
+            examId: validExamId,
             assignedBy,
           });
 
           await studentExam.save();
-          console.log(`Stored exam assignment in DB for ${email}`);
         } catch (err) {
           console.error(`Error processing student ${email}:`, err.message);
         }

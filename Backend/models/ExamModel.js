@@ -1,64 +1,75 @@
 const mongoose = require('mongoose');
 
-const ExamSchema = new mongoose.Schema({
-  status: { type: String},
-  basicInfo: {
-    title: { type: String, required: true },
-    category: { type: String, required: true },
-    coverPreview: { type: String, default: "/exam.jpg" },
-    description: { type: String },
-  },
-  questions: [
-    {
-      question: String,
-      options: [String],
-      correct: [String],
-      marks: Number,
-    }
-  ],
+const examSchema = new mongoose.Schema(
+  {
+    faculty_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Faculty",
+      required: true,
+    },
 
-  settings: {
-    availability: {
-      timeLimitDays: {
-        from: { type: String },
-        to: { type: String },
-      },
-      timeLimitHours: {
-        from: { type: String }, 
-        to: { type: String }, 
-      },
-      lateTime: { type: String },
+    status: { type: String },
+
+    basicInfo: {
+      title: { type: String, required: true },
+      category: { type: String, required: true },
+      coverPreview: { type: String, default: "/exam.jpg" },
+      description: { type: String },
     },
-    examTakenTimes: {
-      type: {
-        type: String,
+
+    questions: [
+      {
+        question: String,
+        options: [String],
+        correct: [String],
+        marks: Number,
       },
-      multiple: { type: Number },
-    },
-    answerTimeControl: {
-      type: {
-        type: String,
+    ],
+
+    settings: {
+      availability: {
+        timeLimitDays: {
+          from: { type: String },
+          to: { type: String },
+        },
+        timeLimitHours: {
+          from: { type: String },
+          to: { type: String },
+        },
+        lateTime: { type: String },
       },
-      examTime: { type: Number }, 
-      questionTime: { type: Number },
-    },
-    assignExamTo: {
-      specificUsers: [],
-    },
-    results: {
-      displayScore: {
-        enabled: { type: Boolean },
-        passPercentage: { type: Number },
-        negativeMarking: { type: Number },
+      examTakenTimes: {
+        type: {
+          type: String,
+        },
+        multiple: { type: Number },
       },
-    }, 
-    antiCheating: {
-      switchingScreen: { type: Number },
-      forceFullscreen: { type: Boolean },
-      webcam: { type: Boolean },
-      noiseDetection: { type: Boolean },
+      answerTimeControl: {
+        type: {
+          type: String,
+        },
+        examTime: { type: Number },
+        questionTime: { type: Number },
+      },
+      assignExamTo: {
+        specificUsers: [String], // You can use ObjectId if needed
+      },
+      results: {
+        displayScore: {
+          enabled: { type: Boolean },
+          passPercentage: { type: Number },
+          negativeMarking: { type: Number },
+        },
+      },
+      antiCheating: {
+        switchingScreen: { type: Number },
+        forceFullscreen: { type: Boolean },
+        webcam: { type: Boolean },
+        noiseDetection: { type: Boolean },
+      },
     },
   },
-}, { timestamps: true });
+  { timestamps: true }
+);
 
-module.exports = mongoose.model('Exam', ExamSchema);
+module.exports = mongoose.model("Exam", examSchema);

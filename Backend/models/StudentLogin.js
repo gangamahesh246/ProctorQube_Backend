@@ -9,6 +9,14 @@ const studentLoginSchema = new mongoose.Schema({
     unique: true,
     required: [true, "College email is required"]
   },
+  otp: {
+    type: String,
+    default: null,
+  },
+  otpExpiry: {
+    type: Number,
+    default: null,
+  },
 });
 
 studentLoginSchema.pre("save", async function (next) {

@@ -6,18 +6,18 @@ const { uploadFileToS3 } = require("../utils/s3upload");
 const postExam = async (req, res) => {
   try {
     let questions, settings;
+
     try {
       questions = JSON.parse(req.body.questions);
     } catch (e) {
-      console.error("Error parsing questions:", e);
       return res
         .status(400)
         .json({ message: "Invalid questions JSON", error: e.message });
     }
+
     try {
       settings = JSON.parse(req.body.settings);
     } catch (e) {
-      console.error("Error parsing settings:", e);
       return res
         .status(400)
         .json({ message: "Invalid settings JSON", error: e.message });
@@ -28,7 +28,6 @@ const postExam = async (req, res) => {
       try {
         coverPreview = await uploadFileToS3(req.file);
       } catch (e) {
-        console.error("Error uploading file to S3:", e);
         return res
           .status(500)
           .json({ message: "Error uploading cover image", error: e.message });
@@ -41,29 +40,28 @@ const postExam = async (req, res) => {
       title: req.body.title,
       category: req.body.category,
       description: req.body.description || "",
-      coverPreview: coverPreview,
+      coverPreview,
     };
 
-    const examData = {
+    if (
+      !req.body.faculty_id ||
+      !mongoose.Types.ObjectId.isValid(req.body.faculty_id)
+    ) {
+      return res.status(400).json({ message: "Valid Faculty ID is required" });
+    }
+
+    const newExam = new Exam({
+      faculty_id: req.body.faculty_id,
       basicInfo,
       questions,
       settings,
-    };
+    });
 
-    let savedExam;
-    try {
-      const newExam = new Exam(examData);
-      savedExam = await newExam.save();
-    } catch (e) {
-      console.error("Error saving exam to DB:", e);
-      return res
-        .status(500)
-        .json({ message: "Error saving exam to database", error: e.message });
-    }
+    await newExam.save();
 
     res.status(201).json({
-      message: "Exam created successfully",
-      exam: savedExam,
+      message: "New exam created successfully",
+      exam: newExam,
     });
   } catch (error) {
     console.error("POST EXAM ERROR:", error);
@@ -73,32 +71,45 @@ const postExam = async (req, res) => {
 
 const GetExam = async (req, res) => {
   try {
+    const { faculty_id } = req.query;
+
+    if (!faculty_id || !mongoose.Types.ObjectId.isValid(faculty_id)) {
+      return res.status(400).json({ message: "Valid faculty_id is required" });
+    }
+
     const exams = await Exam.aggregate([
+      {
+        $match: { faculty_id: new mongoose.Types.ObjectId(faculty_id) },
+      },
       {
         $project: {
           _id: 1,
-          "basicInfo.title": 1,
-          "basicInfo.coverPreview": 1,
-          "basicInfo.category": 1,
-          "settings.answerTimeControl.examTime": 1,
-          "settings.answerTimeControl.questionTime": 1,
-          "settings.results.displayScore.totalPoints": 1,
-          questionsCount: { $size: { $ifNull: ["$questions", []] } },
-          "settings.assignExamTo.specificUsersCount": {
+          title: "$basicInfo.title",
+          coverPreview: {
+            $ifNull: ["$basicInfo.coverPreview", "/exam.jpg"],
+          },
+          category: "$basicInfo.category",
+          examTime: "$settings.answerTimeControl.examTime",
+          questionTime: "$settings.answerTimeControl.questionTime",
+          passPercentage: "$settings.results.displayScore.passPercentage",
+          fromDate: "$settings.availability.timeLimitDays.from",
+          toDate: "$settings.availability.timeLimitDays.to",
+          fromTime: "$settings.availability.timeLimitHours.from",
+          toTime: "$settings.availability.timeLimitHours.to",
+          questionsCount: {
+            $size: { $ifNull: ["$questions", []] },
+          },
+          specificUsersCount: {
             $size: { $ifNull: ["$settings.assignExamTo.specificUsers", []] },
           },
-          "settings.results.displayScore.passPercentage": 1,
-          "settings.availability.timeLimitDays.from": 1,
-          "settings.availability.timeLimitDays.to": 1,
-          "settings.availability.timeLimitHours.from": 1,
-          "settings.availability.timeLimitHours.to": 1,
         },
       },
     ]);
+
     res.status(200).json(exams);
   } catch (error) {
     console.error("Error getting exams:", error);
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
