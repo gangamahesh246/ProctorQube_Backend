@@ -44,7 +44,7 @@ const getStudentExams = async (req, res) => {
 
   try {
     const data = await StudentExam.findOne({
-      student_id: new mongoose.Types.ObjectId(student_id),
+      student_id: student_id,
     }).populate({
       path: "exams.examId",
       select:
@@ -407,6 +407,7 @@ const getStudentExamStats = async (req, res) => {
 
       const examTitle = lastAttempt?.stats?.title ?? "Untitled Exam";
       const faculty = exam.assignedBy;
+      const id = exam.examId;
       const date = exam.assignedAt
         ? new Date(exam.assignedAt).toLocaleDateString("en-GB", {
             day: "2-digit",
@@ -429,6 +430,7 @@ const getStudentExamStats = async (req, res) => {
         faculty,
         date,
         time,
+        id,
         score,
         status,
         proctorAlerts,

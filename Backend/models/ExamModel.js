@@ -52,7 +52,7 @@ const examSchema = new mongoose.Schema(
         questionTime: { type: Number },
       },
       assignExamTo: {
-        specificUsers: [String], // You can use ObjectId if needed
+        specificUsers: [String], 
       },
       results: {
         displayScore: {

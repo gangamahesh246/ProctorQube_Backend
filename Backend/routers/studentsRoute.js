@@ -4,7 +4,7 @@ const { GetStudents, deleteTechnology, PostOrUpdateStudents, PostSingleStudent, 
 const { protectAdmin, protectStudent } = require("../middlewares/authMiddleware");
 
 router.get("/getstudents", protectAdmin, GetStudents);
-router.get("/getstudentId", protectStudent, GetStudentId);
+router.get("/getstudentId", GetStudentId);
 router.get("/getstudentIds", GetStudentIds);
 router.get("/getstudentmails", GetStudentMails);
 router.delete("/deletebranch", protectAdmin, deleteTechnology);

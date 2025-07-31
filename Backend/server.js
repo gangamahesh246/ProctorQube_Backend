@@ -46,6 +46,7 @@ app.use(bodyParser.json());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/public", express.static("public"));
+app.use('/uploads', express.static('uploads'));
 
 app.use("/", exam);
 app.use("/", question);
@@ -97,6 +98,7 @@ io.on("connection", (socket) => {
           let studentExam = await StudentExam.findOne({
             student_id: student._id,
           });
+          console.log(studentExam);
 
           if (!studentExam) {
             studentExam = new StudentExam({

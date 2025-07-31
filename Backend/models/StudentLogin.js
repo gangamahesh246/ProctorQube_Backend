@@ -1,32 +1,45 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
+const allowedDomains = ["@aec.edu.in", "@acet.ac.in", "@acoe.edu.in"];
+
 const studentLoginSchema = new mongoose.Schema({
-  username: { type: String, required: true, trim: true },
-  password: { type: String, required: true },
-  college_mail: {
-    type: String,
-    unique: true,
-    required: [true, "College email is required"]
-  },
-  otp: {
-    type: String,
-    default: null,
-  },
-  otpExpiry: {
-    type: Number,
-    default: null,
-  },
+  username: { type: String, required: true, trim: true },
+
+  password: { type: String, required: true },
+
+  college_mail: {
+    type: String,
+    unique: true,
+    required: [true, "College email is required"],
+    validate: {
+      validator: function (email) {
+        return allowedDomains.some((domain) => email.endsWith(domain));
+      },
+      message:
+        "Email must end with @aec.edu.in, @acet.ac.in, or @acoe.edu.in.",
+    },
+  },
+
+  otp: {
+    type: String,
+    default: null,
+  },
+
+  otpExpiry: {
+    type: Number,
+    default: null,
+  },
 });
 
 studentLoginSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
 });
 
 studentLoginSchema.methods.matchPassword = function (enteredPassword) {
-  return bcrypt.compare(enteredPassword, this.password);
+  return bcrypt.compare(enteredPassword, this.password);
 };
 
 module.exports = mongoose.model("StudentLogin", studentLoginSchema);
