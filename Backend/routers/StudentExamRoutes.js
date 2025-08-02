@@ -7,7 +7,8 @@ const {
   setStatus,
   getStudentExamStats,
   GetAttempts,
-  Ranking,
+  GlobalRank,
+  getGlobalRank
 } = require("../controllers/StudentExamController");
 
 const {
@@ -21,7 +22,8 @@ router.get("/student", getStudentExams);
 router.get("/studentprofilestats", protectStudent, getStudentExamStats);
 router.get("/studentattempts", protectAdmin, GetAttempts);
 router.post("/status", protectStudent, setStatus);
-router.put("/rank", Ranking);
+router.post("/globalrank", GlobalRank);
+router.get("/getglobalrank", getGlobalRank);
 
 router.post("/student/complete", protectStudent, upload.array("violationImage", 5), updateExamStatus);
 

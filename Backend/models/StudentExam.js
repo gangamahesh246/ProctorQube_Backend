@@ -41,7 +41,6 @@ const examEntrySchema = new mongoose.Schema({
   examId: { type: mongoose.Schema.Types.ObjectId, ref: "Exam", required: true },
 
   status: { type: String },
-  ranking: { type: Number },
   timeTaken: { type: Number },
   assignedBy: { type: String },
   assignedAt: { type: Date, default: Date.now },
@@ -58,6 +57,8 @@ const studentExamSchema = new mongoose.Schema({
     unique: true,
   },
   exams: [examEntrySchema],
+  globalrank: { type: Number, default: 0 },
+  totalstudents: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
 });
 

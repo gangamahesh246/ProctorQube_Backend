@@ -634,38 +634,66 @@ const GetAttempts = async (req, res) => {
   }
 };
 
-const Ranking = async (req, res) => {
-  const updates = req.body;
+const GlobalRank = async (req, res) => {
+  const { student_id, rank, totalstudents } = req.body;
 
-  if (!Array.isArray(updates)) {
-    return res.status(400).json({ message: "Invalid input format" });
+  if (!student_id || typeof rank !== "number" || typeof totalstudents !== "number") {
+    return res.status(400).json({
+      message: "student_id, numeric rank, and numeric totalstudents are required",
+    });
   }
-
-  const bulkOps = updates.map(({ student_id, exam_id, rank }) => ({
-  updateOne: {
-    filter: {
-      student_id: new mongoose.Types.ObjectId(student_id),
-      "exams.examId":new mongoose.Types.ObjectId(exam_id),
-    },
-    update: {
-      $set: {
-        "exams.$[exam].ranking": rank,
-      },
-    },
-    arrayFilters: [
-      { "exam.examId": new mongoose.Types.ObjectId(exam_id) }
-    ],
-  },
-}));
 
   try {
-    const result = await StudentExam.bulkWrite(bulkOps, { ordered: false });
-    return res.status(200).json({ message: "Ranks updated", result });
+    const updated = await StudentExam.findOneAndUpdate(
+      { student_id },
+      {
+        $set: {
+          globalrank: rank,
+          totalstudents: totalstudents,
+        },
+      },
+      {
+        new: true,
+        upsert: true,
+        runValidators: true,
+      }
+    );
+
+    res.status(200).json({
+      message: "Global rank and total students updated successfully",
+      data: updated,
+    });
   } catch (error) {
-    console.error("Error updating ranks:", error);
-    return res.status(500).json({ message: "Error updating ranks", error });
+    console.error("Error in GlobalRank controller:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
+
+const getGlobalRank = async (req, res) => {
+  const { student_id } = req.query;
+
+  if (!student_id) {
+    return res.status(400).json({ message: "student_id is required" });
+  }
+
+  try {
+    const studentExam = await StudentExam.findOne({ student_id });
+
+    if (!studentExam) {
+      return res.status(404).json({ message: "StudentExam record not found" });
+    }
+
+    res.status(200).json({
+      message: "Global rank fetched successfully",
+      globalrank: studentExam.globalrank,
+      totalstudents: studentExam.totalstudents,
+    });
+  } catch (error) {
+    console.error("Error fetching global rank:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 
 module.exports = {
   assignExamToStudent,
@@ -674,5 +702,6 @@ module.exports = {
   setStatus,
   getStudentExamStats,
   GetAttempts,
-  Ranking,
+  GlobalRank,
+  getGlobalRank
 };
