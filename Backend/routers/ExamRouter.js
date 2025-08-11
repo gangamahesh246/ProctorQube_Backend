@@ -13,4 +13,4 @@ Route.get('/getexamquestions/:examId', getExamQuestionsById);
 Route.put('/updateexam/:examId', protectAdmin, UpdateExam);
 Route.delete('/deleteexam/:examId', protectAdmin, deleteExam);
 
-module.exports = Route;
+module.exports = Route;x
