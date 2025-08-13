@@ -37,9 +37,6 @@ cron.schedule("0 2 * * *", () => {
 });
 
 const port = 3000 || 3001
-app.get("/", (req, res) => {
-  res.send("Hello World");
-});
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -66,7 +63,7 @@ app.use("/api", imageProxy);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: process.env.ORIGIN,
     methods: ["GET", "POST"],
   },
 });
