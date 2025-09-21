@@ -106,21 +106,17 @@ socket.on(
 
         const validExamId = new mongoose.Types.ObjectId(examData._id);
 
-        // ✅ Check if this exam already exists
         const existingExam = studentExam.exams.find(e =>
           e.examId.equals(validExamId)
         );
 
         if (!existingExam) {
-          // exam not found → add it
           studentExam.exams.push({
             examId: validExamId,
             assignedBy,
-            // add more fields if needed
           });
         } else {
-          // exam found → update instead of duplicate
-          existingExam.assignedBy = assignedBy;
+          existingExam.assignedBy = assignedBy || "Admin";
 
           if (examData.settings) {
             existingExam.settings = examData.settings;
