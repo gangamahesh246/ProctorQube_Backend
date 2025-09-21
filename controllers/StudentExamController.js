@@ -488,43 +488,56 @@ const getStudentExamStats = async (req, res) => {
     const fetchedExams = await Exam.find({ _id: { $in: examIds } });
 
     const upcomingExams = fetchedExams
-      .filter((exam) => {
-        const assigned = examsData.find(
-          (ex) => ex.examId?.toString() === exam._id?.toString()
-        );
-
-        const isCompleted = assigned?.status === "completed";
-
-        const startDate = new Date(
-          exam.settings?.availability?.timeLimitDays?.from
-        );
-
-        return startDate > new Date() && !isCompleted;
-      })
       .map((exam) => {
         const assigned = examsData.find(
           (ex) => ex.examId?.toString() === exam._id?.toString()
         );
 
+        const startDate = new Date(
+          exam.settings?.availability?.timeLimitDays?.from
+        );
+
+        const startTime = exam.settings?.availability?.timeLimitHours?.from
+          ? new Date(
+              startDate.toDateString() +
+                " " +
+                exam.settings?.availability?.timeLimitHours?.from
+            )
+          : startDate;
+
+        const now = new Date();
+
+        const isCompleted = assigned?.status === "completed";
+        if (isCompleted) return null;
+
+        const examStart = startTime;
+        const examEnd = new Date(
+          examStart.getTime() +
+            (exam.settings?.answerTimeControl?.examTime || 0) * 60 * 1000
+        );
+        const hoursUntilStart = (examStart - now) / (1000 * 60 * 60); // in hours
+        const hasStarted = now >= examStart;
+        const hasEnded = now >= examEnd;
+
         return {
           examTitle: exam.basicInfo?.title || "Upcoming Exam",
-          date: exam.settings?.availability?.timeLimitDays?.from
-            ? new Date(
-                exam.settings?.availability?.timeLimitDays?.from
-              ).toLocaleDateString("en-GB", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })
-            : "",
+          date: startDate.toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          }),
           time: formatTo12Hour(
             exam.settings?.availability?.timeLimitHours?.from
           ),
-          hoursUntil: exam.settings?.answerTimeControl?.examTime / 60,
+          hoursUntil: hoursUntilStart,
           faculty: assigned?.assignedBy || "Unknown",
           duration: exam.settings?.answerTimeControl?.examTime / 60 || 0,
+          hasStarted,
+          hasEnded,
+          startTime, 
         };
-      });
+      })
+      .filter(Boolean); 
 
     const examStats = {
       totalExams,
