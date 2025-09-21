@@ -75,47 +75,65 @@ io.on("connection", (socket) => {
     onlineStudents.set(email, socket.id);
   });
 
-  socket.on(
-    "assignExamToStudents",
-    async ({ studentEmails, examData, assignedBy }) => {
-      for (const email of studentEmails) {
-        try {
-          const student = await Student.findOne({ student_mail: email });
-          if (!student) {
-            console.log(`Student with email ${email} not found`);
-            continue;
-          }
-          const socketId = onlineStudents.get(email);
-          if (socketId) {
-            socket.to(socketId).emit("examAssigned", examData, assignedBy);
-          } else {
-            console.log(`Student ${email} is not online.`);
-          }
+socket.on(
+  "assignExamToStudents",
+  async ({ studentEmails, examData, assignedBy }) => {
+    for (const email of studentEmails) {
+      try {
+        const student = await Student.findOne({ student_mail: email });
+        if (!student) {
+          console.log(`Student with email ${email} not found`);
+          continue;
+        }
 
-          let studentExam = await StudentExam.findOne({
+        const socketId = onlineStudents.get(email);
+        if (socketId) {
+          socket.to(socketId).emit("examAssigned", examData, assignedBy);
+        } else {
+          console.log(`Student ${email} is not online.`);
+        }
+
+        let studentExam = await StudentExam.findOne({
+          student_id: student._id,
+        });
+
+        if (!studentExam) {
+          studentExam = new StudentExam({
             student_id: student._id,
+            exams: [],
           });
-          console.log(studentExam);
+        }
 
-          if (!studentExam) {
-            studentExam = new StudentExam({
-              student_id: student._id,
-              exams: [],
-            });
-          }
-          const validExamId = new mongoose.Types.ObjectId(examData._id);
+        const validExamId = new mongoose.Types.ObjectId(examData._id);
+
+        // ✅ Check if this exam already exists
+        const existingExam = studentExam.exams.find(e =>
+          e.examId.equals(validExamId)
+        );
+
+        if (!existingExam) {
+          // exam not found → add it
           studentExam.exams.push({
             examId: validExamId,
             assignedBy,
+            // add more fields if needed
           });
+        } else {
+          // exam found → update instead of duplicate
+          existingExam.assignedBy = assignedBy;
 
-          await studentExam.save();
-        } catch (err) {
-          console.error(`Error processing student ${email}:`, err.message);
+          if (examData.settings) {
+            existingExam.settings = examData.settings;
+          }
         }
+
+        await studentExam.save();
+      } catch (err) {
+        console.error(`Error processing student ${email}:`, err.message);
       }
     }
-  );
+  }
+);
 
 socket.on("deleteExamFromStudents", async ({ examId }) => {
   try {
