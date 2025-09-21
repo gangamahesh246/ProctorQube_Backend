@@ -24,7 +24,9 @@ const assignExamToStudent = async (req, res) => {
       await studentExam.save();
     }
 
-    res.status(200).json({ message: "Exam assigned successfully.", examData: newExam });
+    res
+      .status(200)
+      .json({ message: "Exam assigned successfully.", examData: newExam });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to assign exam." });
@@ -486,11 +488,19 @@ const getStudentExamStats = async (req, res) => {
     const fetchedExams = await Exam.find({ _id: { $in: examIds } });
 
     const upcomingExams = fetchedExams
-      .filter(
-        (exam) =>
-          new Date(exam.settings?.availability?.timeLimitDays?.from) >
-          new Date()
-      )
+      .filter((exam) => {
+        const assigned = examsData.find(
+          (ex) => ex.examId?.toString() === exam._id?.toString()
+        );
+
+        const isCompleted = assigned?.status === "completed";
+
+        const startDate = new Date(
+          exam.settings?.availability?.timeLimitDays?.from
+        );
+
+        return startDate > new Date() && !isCompleted;
+      })
       .map((exam) => {
         const assigned = examsData.find(
           (ex) => ex.examId?.toString() === exam._id?.toString()
@@ -573,127 +583,131 @@ const getStudentExamStats = async (req, res) => {
 };
 
 const GetAttempts = async (req, res) => {
-  let { student_id, examId } = req.query;
+  let { student_id, examId } = req.query;
 
-  if (!Array.isArray(student_id)) {
-    student_id = [student_id];
-  }
+  if (!Array.isArray(student_id)) {
+    student_id = [student_id];
+  }
 
-  if (!examId || typeof examId !== "string") {
-    return res.status(400).json({ message: "Missing or invalid examId" });
-  }
+  if (!examId || typeof examId !== "string") {
+    return res.status(400).json({ message: "Missing or invalid examId" });
+  }
 
-  const validIds = student_id.filter((id) =>
-    mongoose.Types.ObjectId.isValid(id)
-  );
+  const validIds = student_id.filter((id) =>
+    mongoose.Types.ObjectId.isValid(id)
+  );
 
-  if (validIds.length === 0) {
-    return res.status(400).json({ message: "No valid student IDs provided" });
-  }
+  if (validIds.length === 0) {
+    return res.status(400).json({ message: "No valid student IDs provided" });
+  }
 
-  try {
-    const data = await StudentExam.find({
-      student_id: { $in: validIds.map((id) => new mongoose.Types.ObjectId(id)) },
-    });
+  try {
+    const data = await StudentExam.find({
+      student_id: {
+        $in: validIds.map((id) => new mongoose.Types.ObjectId(id)),
+      },
+    });
 
-    const results = validIds.map((id) => {
-      const studentData = data.find((doc) =>
-        doc.student_id.toString() === id
-      );
+    const results = validIds.map((id) => {
+      const studentData = data.find((doc) => doc.student_id.toString() === id);
 
-      if (studentData) {
-        const matchedExam = studentData.exams.find(
-          (exam) => exam.examId.toString() === examId
-        );
+      if (studentData) {
+        const matchedExam = studentData.exams.find(
+          (exam) => exam.examId.toString() === examId
+        );
 
-        if (matchedExam && matchedExam.attempts?.length > 0) {
-          return {
-            student_id: id,
-            lastAttemptStats: matchedExam.attempts.at(-1).stats || null,
-          };
-        }
+        if (matchedExam && matchedExam.attempts?.length > 0) {
+          return {
+            student_id: id,
+            lastAttemptStats: matchedExam.attempts.at(-1).stats || null,
+          };
+        }
 
-        return {
-          student_id: id,
-          lastAttemptStats: null,
-        };
-      } else {
-        return {
-          student_id: id,
-          lastAttemptStats: null,
-        };
-      }
-    });
+        return {
+          student_id: id,
+          lastAttemptStats: null,
+        };
+      } else {
+        return {
+          student_id: id,
+          lastAttemptStats: null,
+        };
+      }
+    });
 
-    return res.status(200).json(results);
-  } catch (err) {
-    console.error("Error fetching attempts:", err);
-    return res
-      .status(500)
-      .json({ message: "Server error", error: err.message });
-  }
+    return res.status(200).json(results);
+  } catch (err) {
+    console.error("Error fetching attempts:", err);
+    return res
+      .status(500)
+      .json({ message: "Server error", error: err.message });
+  }
 };
 
 const GlobalRank = async (req, res) => {
-  const { student_id, rank, totalstudents } = req.body;
+  const { student_id, rank, totalstudents } = req.body;
 
-  if (!student_id || typeof rank !== "number" || typeof totalstudents !== "number") {
-    return res.status(400).json({
-      message: "student_id, numeric rank, and numeric totalstudents are required",
-    });
-  }
+  if (
+    !student_id ||
+    typeof rank !== "number" ||
+    typeof totalstudents !== "number"
+  ) {
+    return res.status(400).json({
+      message:
+        "student_id, numeric rank, and numeric totalstudents are required",
+    });
+  }
 
-  try {
-    const updated = await StudentExam.findOneAndUpdate(
-      { student_id },
-      {
-        $set: {
-          globalrank: rank,
-          totalstudents: totalstudents,
-        },
-      },
-      {
-        new: true,
-        upsert: true,
-        runValidators: true,
-      }
-    );
+  try {
+    const updated = await StudentExam.findOneAndUpdate(
+      { student_id },
+      {
+        $set: {
+          globalrank: rank,
+          totalstudents: totalstudents,
+        },
+      },
+      {
+        new: true,
+        upsert: true,
+        runValidators: true,
+      }
+    );
 
-    res.status(200).json({
-      message: "Global rank and total students updated successfully",
-      data: updated,
-    });
-  } catch (error) {
-    console.error("Error in GlobalRank controller:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
+    res.status(200).json({
+      message: "Global rank and total students updated successfully",
+      data: updated,
+    });
+  } catch (error) {
+    console.error("Error in GlobalRank controller:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
 
 const getGlobalRank = async (req, res) => {
-  const { student_id } = req.query;
+  const { student_id } = req.query;
 
-  if (!student_id) {
-    return res.status(400).json({ message: "student_id is required" });
-  }
+  if (!student_id) {
+    return res.status(400).json({ message: "student_id is required" });
+  }
 
-  try {
-    const studentExam = await StudentExam.findOne({ student_id });
+  try {
+    const studentExam = await StudentExam.findOne({ student_id });
 
-    if (!studentExam) {
-      return res.status(404).json({ message: "StudentExam record not found" });
-    }
+    if (!studentExam) {
+      return res.status(404).json({ message: "StudentExam record not found" });
+    }
 
-    res.status(200).json({
-      message: "Global rank fetched successfully",
-      globalrank: studentExam.globalrank,
-      totalstudents: studentExam.totalstudents,
-    });
-  } catch (error) {
-    console.error("Error fetching global rank:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
+    res.status(200).json({
+      message: "Global rank fetched successfully",
+      globalrank: studentExam.globalrank,
+      totalstudents: studentExam.totalstudents,
+    });
+  } catch (error) {
+    console.error("Error fetching global rank:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
-
 
 module.exports = {
   assignExamToStudent,
@@ -703,5 +717,5 @@ module.exports = {
   getStudentExamStats,
   GetAttempts,
   GlobalRank,
-  getGlobalRank
+  getGlobalRank,
 };
